@@ -101,7 +101,7 @@ def parse_items(raw):
     return texts
 
 
-def call_gemini(cfg, prompt):
+def call_gemini(cfg, prompt, model):
     key = require_env("GEMINI_API_KEY")
     body = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -120,7 +120,7 @@ def call_gemini(cfg, prompt):
     }
     resp = request_with_retry(
         "POST",
-        GEMINI_URL.format(model=cfg["model"]),
+        GEMINI_URL.format(model=model),
         headers={"x-goog-api-key": key, "Content-Type": "application/json"},
         json=body,
     )
@@ -162,10 +162,15 @@ def main():
             break
         assignments = build_assignments(cfg, recent + accepted, remaining)
         prompt = build_prompt(cfg, assignments, avoid_texts + [a["text"] for a in accepted])
-        try:
-            texts = call_gemini(cfg, prompt)
-        except (RuntimeError, ValueError) as exc:
-            print(f"Putaran {round_no} gagal: {exc}")
+        texts = None
+        for model in [cfg["model"]] + cfg.get("fallback_models", []):
+            try:
+                texts = call_gemini(cfg, prompt, model)
+                print(f"Putaran {round_no}: berhasil dengan model {model}.")
+                break
+            except (RuntimeError, ValueError) as exc:
+                print(f"Putaran {round_no}, model {model} gagal: {exc}")
+        if texts is None:
             continue
         for assignment, text in zip(assignments, texts):
             text = text.strip()
