@@ -1,60 +1,162 @@
-# Threads Autopilot
+# Threads Autopilot V2
 
-Pipeline otomatis (bukan AI agent): **generate konten (Gemini) -> antrean -> posting terjadwal ke Threads**, semuanya di GitHub Actions.
+Pipeline otomatis untuk akun Threads:
 
+**Gemini → Content DNA + Hook Engine → Quality Gate → Queue → Threads API**
+
+Versi V2 dirancang supaya output tidak terasa seperti artikel AI generik. Generator diberi voice yang lebih berani, mekanisme hook, aturan anti-AI, dan quality gate deterministic sebelum post masuk antrean.
+
+## Cara kerja
+
+```text
+08:00 WIB
+Generate 8 kandidat
+      ↓
+Content DNA / Hook Engine
+      ↓
+Quality Gate
+      ↓
+Masuk queue sebagai approved
+      ↓
+09:00 ──┐
+13:00   │
+17:00   ├── Threads API
+21:00 ──┘
 ```
-generate.yml  (1x/hari)   -> src/generate.py -> data/posts.json (status pending/approved)
-post.yml      (beberapa x/hari) -> src/post.py -> Threads API   -> status posted
-refresh-token.yml (mingguan) -> src/refresh_token.py -> update secret token
-```
 
-## 1. Siapkan repo
-1. Buat repo **privat** di GitHub, upload seluruh isi folder ini.
-2. Pastikan branch default berisi file `.github/workflows/*` (workflow terjadwal hanya jalan dari branch default).
-3. Settings -> Actions -> General -> Workflow permissions: izinkan workflow menulis ke repo (jika organisasi membatasi).
+Queue ditargetkan **16 post**, generator mengisi maksimal **8 post/run**, dan scheduler mempublikasikan maksimal **4 post/hari**.
 
-## 2. Siapkan Meta / Threads API
-1. Di Meta for Developers buat app dan tambahkan use case Threads API.
-2. Aktifkan permission `threads_basic` dan `threads_content_publish`.
-3. Daftarkan akun Threads-mu sebagai tester app, lalu terima undangannya dari aplikasi Threads.
-4. Buat user access token (short-lived), lalu tukar jadi long-lived (berlaku ~60 hari):
-   ```
-   curl "https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=APP_SECRET&access_token=SHORT_LIVED_TOKEN"
-   ```
-5. Ambil user id:
-   ```
-   curl "https://graph.threads.net/v1.0/me?fields=id,username&access_token=LONG_LIVED_TOKEN"
-   ```
-Nama menu di dashboard Meta bisa berubah; ikuti dokumentasi resmi Threads API bila ada perbedaan.
+## 1. Setup satu kali
 
-## 3. Isi GitHub Secrets
-Settings -> Secrets and variables -> Actions -> New repository secret:
+1. Buat repo **privat** di GitHub dan upload seluruh isi folder.
+2. Pastikan branch default berisi `.github/workflows/*`.
+3. Settings → Actions → General → Workflow permissions: izinkan workflow menulis ke repo jika organisasi/repo membatasinya.
+4. Isi GitHub Secrets:
 
 | Secret | Isi |
 |---|---|
-| `GEMINI_API_KEY` | API key dari Google AI Studio |
-| `THREADS_USER_ID` | id akun Threads (langkah 2.5) |
-| `THREADS_ACCESS_TOKEN` | long-lived token (langkah 2.4) |
-| `GH_PAT` | Personal Access Token GitHub yang boleh menulis secret repo ini (fine-grained: repo ini saja, permission **Secrets: Read and write**) |
+| `GEMINI_API_KEY` | API key Google AI Studio |
+| `THREADS_USER_ID` | ID akun Threads |
+| `THREADS_ACCESS_TOKEN` | Access token Threads |
+| `GH_PAT` | PAT GitHub yang diperlukan workflow refresh token untuk update secret |
 
-## 4. Tes bertahap
-1. Actions -> **Generate konten** -> Run workflow. Cek `data/posts.json`: postingan baru berstatus `pending`.
-2. Ubah `"status": "pending"` menjadi `"approved"` pada postingan yang kamu setujui (edit langsung di GitHub). Set `require_approval` ke `false` di `config.json` kalau mau semua otomatis approved.
-3. Actions -> **Posting ke Threads** -> Run workflow dengan `dry_run = true`. Pastikan teks yang akan diposting benar.
-4. Jalankan lagi dengan `dry_run = false` untuk posting sungguhan.
-5. Actions -> **Refresh token Threads** -> Run workflow. Catatan: token baru bisa di-refresh setelah berumur minimal 24 jam, jadi tes ini bisa gagal di hari pertama.
+## 2. Tes sebelum autopilot
 
-## 5. Mengatur frekuensi & gaya
-- **Frekuensi posting**: ubah baris `cron` di `.github/workflows/post.yml` (jam dalam UTC, WIB = UTC+7). Contoh 6x/hari: `"0 0,3,6,9,12,15 * * *"`.
-- **Batas harian**: `max_posts_per_day` di `config.json`.
-- **Gaya**: atur bobot di `style_weights`. Set satu gaya ke 1 dan lainnya ke 0 untuk memakai gaya tunggal. Tambah gaya baru di `styles`.
-- **Topik & format**: edit `pillars` dan `formats`. Generator memilih yang paling jarang dipakai agar variatif.
-- **Aturan konten**: edit `rules`. Ini yang menjaga konten tetap evergreen dan tanpa klaim penghasilan.
-- **Model**: `model` di `config.json` (default `gemini-flash-latest`). Cek daftar model terbaru di Google AI Studio.
+**Jangan langsung membiarkan bot posting tanpa melihat hasil pertamanya.**
 
-## 6. Catatan penting
-- Jadwal cron GitHub tidak presisi (bisa molor beberapa menit hingga belasan menit).
-- Postingan gagal dicoba maksimal 3x, lalu berstatus `failed` agar tidak memblokir antrean. Lihat `last_error` di `posts.json`.
-- Free tier Gemini boleh dipakai Google untuk meningkatkan produknya; jangan kirim data pribadi.
-- Jangan pernah commit token atau API key ke repo. Semuanya lewat GitHub Secrets.
-- Batas teks Threads 500 karakter; config memakai 450 sebagai margin aman.
+1. Actions → **Generate konten** → Run workflow.
+2. Buka `data/posts.json` dan baca beberapa hasil.
+3. Jika voice sudah cocok, workflow posting berikutnya akan mengambil item berstatus `approved` secara otomatis.
+4. Untuk simulasi posting manual: Actions → **Posting ke Threads** → Run workflow → `dry_run=true`.
+5. Untuk posting sungguhan secara manual, pilih `dry_run=false`.
+
+Setelah lolos tes awal, kamu tidak perlu menjalankan workflow satu per satu. Schedule akan bekerja otomatis.
+
+## 3. Jadwal default
+
+GitHub Actions memakai UTC. Jadwal V2 dikonversi ke WIB (UTC+7):
+
+- Generate: **08:00 WIB setiap hari**
+- Post: **09:00 WIB**
+- Post: **13:00 WIB**
+- Post: **17:00 WIB**
+- Post: **21:00 WIB**
+
+Cron GitHub tidak menjamin presisi sampai detik dan dapat mengalami delay.
+
+## 4. Content Engine V2
+
+`config.json` sekarang punya beberapa lapisan:
+
+### Voice
+
+```json
+"voice": {
+  "boldness": 0.78,
+  "directness": 0.88,
+  "opinionated": 0.72,
+  "playfulness": 0.42,
+  "sarcasm": 0.18,
+  "specificity": 0.86
+}
+```
+
+Angka ini adalah **instruksi prompt**, bukan parameter API. Artinya kita menggunakannya untuk mengarahkan karakter tulisan.
+
+### Hook Engine
+
+Generator diarahkan untuk memakai mekanisme seperti:
+
+- contrarian
+- pattern interrupt
+- hard truth
+- curiosity gap
+- specific observation
+- direct challenge
+- unexpected comparison
+- myth busting
+
+### Anti-AI
+
+Ada daftar pola generik seperti:
+
+- `Banyak orang...`
+- `Di era digital...`
+- `Jika kamu ingin...`
+- `Berikut beberapa...`
+- `Pada akhirnya...`
+- `Semoga bermanfaat`
+
+Generator diminta menghindari pola tersebut dan quality gate juga menolak beberapa generic opening yang paling jelas.
+
+### Quality Gate
+
+Sebelum masuk queue, post diperiksa untuk:
+
+- panjang minimum/maksimum
+- generic opening
+- terlalu banyak tanda seru/tanya
+- terlalu banyak hashtag
+- repetisi kata yang ekstrem
+- kemiripan dengan post sebelumnya
+- kalimat yang terlalu flat
+
+Ini bukan penilaian kualitas semantik sempurna, tetapi lapisan pengaman agar autopilot tidak langsung memasukkan output jelek ke antrean.
+
+## 5. Mengatur karakter akun
+
+Mayoritas tuning dilakukan di `config.json`, bukan di Python.
+
+Jika output masih terlalu aman:
+
+```json
+"boldness": 0.85,
+"opinionated": 0.80,
+"directness": 0.90
+```
+
+Jika terlalu nyinyir/edgy, turunkan `boldness` atau `sarcasm`.
+
+Jika terlalu generik, naikkan `specificity` dan tambahkan contoh voice yang kamu sukai ke `writing_dna`.
+
+## 6. Mengatur frekuensi
+
+Saat ini targetnya 4 post/hari. Untuk mengubahnya, sesuaikan:
+
+- `max_posts_per_day` di `config.json`
+- cron di `.github/workflows/post.yml`
+- `queue_target` dan `posts_per_generate` jika ingin buffer lebih besar/kecil
+
+Rekomendasi awal: **4 post/hari + queue 16**. Jangan langsung menaikkan frekuensi hanya karena automation sudah tersedia; kualitas dan variasi lebih penting.
+
+## 7. Token Threads
+
+`refresh-token.yml` tetap disediakan untuk workflow refresh token mingguan. Pastikan `GH_PAT` mempunyai permission yang benar untuk memperbarui secret repository.
+
+## 8. Keamanan
+
+- Jangan commit API key/token ke repo.
+- Gunakan GitHub Secrets.
+- Repo sebaiknya private.
+- Jangan memasukkan data pribadi ke prompt/history.
+- Review hasil beberapa hari pertama sebelum mempercayakan autopilot sepenuhnya.
