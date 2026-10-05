@@ -2,7 +2,8 @@ name: Generate konten
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # 01:00 UTC = 08:00 WIB, sekali sehari
+    # 08:00 WIB setiap hari. GitHub cron memakai UTC.
+    - cron: "0 1 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Generate postingan baru
+      - name: Generate + quality gate
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python src/generate.py

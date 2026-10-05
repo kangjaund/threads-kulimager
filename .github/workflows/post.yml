@@ -2,8 +2,7 @@ name: Posting ke Threads
 
 on:
   schedule:
-    # Jam dalam UTC. WIB = UTC+7. Contoh di bawah: 09:00, 13:00, 17:00, 21:00 WIB.
-    # Ubah daftar jam ini untuk mengatur frekuensi posting.
+    # 09:00, 13:00, 17:00, 21:00 WIB. GitHub cron memakai UTC.
     - cron: "0 2,6,10,14 * * *"
   workflow_dispatch:
     inputs:
