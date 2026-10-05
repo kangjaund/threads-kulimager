@@ -39,7 +39,7 @@ def require_env(name):
     return value
 
 
-def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
+def request_with_retry(method, url, *, retries=3, backoff=10, **kwargs):
     """HTTP request dengan retry untuk 429/5xx/network error.
 
     Pesan error sengaja tidak menyertakan URL agar token tidak bocor ke log.
@@ -51,7 +51,7 @@ def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
         try:
             resp = requests.request(method, url, timeout=60, **kwargs)
             if resp.status_code == 429 or resp.status_code >= 500:
-                last = f"HTTP {resp.status_code}"
+                last = f"HTTP {resp.status_code}: {resp.text[:200].strip()}"
             else:
                 return resp
         except requests.RequestException as exc:
