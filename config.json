@@ -5,7 +5,7 @@
   "model": "openai/gpt-oss-120b",
   "temperature": 1.0,
   "max_chars": 450,
-  "require_approval": false,
+  "require_approval": true,
   "queue_target": 16,
   "posts_per_generate": 8,
   "history_window": 40,
@@ -50,7 +50,13 @@
       "Utamakan hook yang spesifik daripada hook yang bombastis.",
       "Boleh sedikit menyentil, tetapi jangan membuat kontroversi palsu.",
       "Jangan mengulang pola hook yang sama dalam batch yang sama.",
-      "Jangan memulai semua post dengan pertanyaan."
+      "Jangan memulai semua post dengan pertanyaan.",
+      "Jangan mulai dengan framing topik. Mulai dengan klaim, konflik, pengakuan, observasi spesifik, atau kalimat yang membuat pembaca berhenti.",
+      "Hook harus terasa seperti kalimat yang layak diposting sendirian. Jangan membuat hook yang hanya berfungsi sebagai judul.",
+      "Hindari formula \"X bukan Y. X adalah Z.\" kecuali ada twist yang benar-benar kuat.",
+      "Hindari formula \"Padahal...\", \"Realitanya...\", \"Lesson:\", \"Myth:\", atau \"Bandingkan:\" sebagai pembuka karena terlalu terasa seperti template.",
+      "Jangan menutup setiap post dengan pertanyaan. Pertanyaan hanya dipakai jika benar-benar membuka perdebatan yang menarik.",
+      "Gunakan line break untuk ritme bila membantu; jangan memadatkan tiga ide menjadi satu paragraf panjang."
     ]
   },
   "writing_dna": [
@@ -63,7 +69,12 @@
     "Boleh menggunakan bahasa percakapan seperti 'nggak', 'cuma', 'justru', 'masalahnya', 'anehnya', selama natural.",
     "Jangan memaksakan slang. Jangan terdengar seperti anak Twitter yang sedang berusaha terlihat keren.",
     "Jangan menjelaskan sesuatu dua kali dengan kata berbeda.",
-    "Jangan menambahkan kesimpulan generik hanya untuk membuat tulisan terasa lengkap."
+    "Jangan menambahkan kesimpulan generik hanya untuk membuat tulisan terasa lengkap.",
+    "Threads bukan artikel mini. Prioritaskan ritme, tension, dan satu kalimat yang quotable.",
+    "Kalimat pertama harus bisa membuat orang berhenti scroll tanpa membutuhkan konteks tambahan.",
+    "Jangan terdengar seperti sedang mengajar pembaca. Tulis seolah sedang mengemukakan sesuatu yang baru saja kamu sadari.",
+    "Untuk storytelling, gunakan skenario hipotetis atau observasi; jangan mengaku pernah mengalami sesuatu yang tidak diberikan sumber.",
+    "Jangan memakai label format secara literal di copy: jangan menulis \"Lesson:\", \"Myth:\", \"Realita:\", \"Bandingkan:\", atau \"Pertanyaannya:\" kecuali benar-benar natural."
   ],
   "banned_patterns": [
     "Banyak orang...",
@@ -111,7 +122,13 @@
     "Jangan terdengar seperti artikel SEO, LinkedIn corporate post, motivator, atau customer-service bot.",
     "Jangan menggunakan terlalu banyak bullet. Threads post bukan checklist kecuali format memang membutuhkan daftar.",
     "Satu post = satu core idea. Jangan mencoba memasukkan seluruh topik sekaligus.",
-    "Prioritaskan specificity, tension, dan point of view daripada kelengkapan."
+    "Prioritaskan specificity, tension, dan point of view daripada kelengkapan.",
+    "Dilarang mengarang pengalaman pribadi. Jangan menulis \"saya pernah...\", \"aku pernah...\", atau cerita first-person seolah itu pengalaman nyata kecuali pengalaman tersebut diberikan sebagai fakta sumber.",
+    "Jangan membuat contoh fiktif yang terdengar seperti fakta spesifik (nama platform, persentase royalti, angka, hasil, atau kejadian nyata) tanpa sumber.",
+    "Hindari pembukaan yang hanya mendefinisikan atau menjelaskan topik. Pembaca harus mendapat tension atau POV sejak baris pertama.",
+    "Minimal 1 dari 2 kalimat pertama harus mengandung tension, specificity, contrast, atau opinion.",
+    "Jika sebuah post bisa dipindahkan ke LinkedIn tanpa perubahan berarti, rewrite agar lebih conversational dan Threads-first.",
+    "Jangan mengulang kata transisi seperti \"padahal\", \"realitanya\", \"masalahnya\", atau \"justru\" secara berlebihan dalam satu batch."
   ],
   "reasoning_effort": "low",
   "max_completion_tokens": 3000

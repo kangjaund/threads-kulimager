@@ -1,131 +1,179 @@
 # Threads Autopilot V2
 
-Pipeline otomatis untuk akun Threads:
+Pipeline semi-autopilot untuk akun Threads:
 
-**Groq → Content DNA + Hook Engine → Quality Gate → Queue → Threads API**
+**Groq → Content DNA + Hook Engine → Quality Gate → Telegram Approval → Queue → Threads API**
 
-Versi V2 dirancang supaya output tidak terasa seperti artikel AI generik. Generator diberi voice yang lebih berani, mekanisme hook, aturan anti-AI, dan quality gate deterministic sebelum post masuk antrean.
+Generator membuat draft, tetapi **tidak boleh posting sebelum kamu approve dari Telegram**.
 
 ## Cara kerja
 
 ```text
 08:00 WIB
-Generate 8 kandidat
+Generate kandidat
       ↓
 Content DNA / Hook Engine
       ↓
 Quality Gate
       ↓
-Masuk queue sebagai approved
+🟡 PENDING
       ↓
-09:00 ──┐
-13:00   │
-17:00   ├── Threads API
-21:00 ──┘
+Telegram
+[ Approve ] [ Reject ]
+      ↓
+🟢 APPROVED
+      ↓
+Threads API
 ```
 
-Queue ditargetkan **16 post**, generator mengisi maksimal **8 post/run**, dan scheduler mempublikasikan maksimal **4 post/hari**.
+Telegram dipoll setiap 5 menit oleh GitHub Actions. Jadi approval dari HP tidak membutuhkan dashboard baru. Inline keyboard digunakan untuk action utama; slash command `/approve ID` dan `/reject ID` tetap tersedia sebagai fallback. Telegram memang mendukung callback query untuk inline buttons, dan `getUpdates` dapat dipakai untuk long polling. citeturn0search8turn0search2
 
 ## 1. Setup satu kali
 
-1. Buat repo **privat** di GitHub dan upload seluruh isi folder.
+1. Buat repo **private** di GitHub dan upload seluruh isi folder.
 2. Pastikan branch default berisi `.github/workflows/*`.
 3. Settings → Actions → General → Workflow permissions: izinkan workflow menulis ke repo jika organisasi/repo membatasinya.
-4. Isi GitHub Secrets:
+4. Buat Telegram bot melalui **@BotFather**.
+5. Buka chat pribadi dengan bot tersebut dan kirim `/start`.
+6. Isi GitHub Secrets:
 
 | Secret | Isi |
 |---|---|
 | `GROQ_API_KEY` | API key GroqCloud |
 | `THREADS_USER_ID` | ID akun Threads |
 | `THREADS_ACCESS_TOKEN` | Access token Threads |
+| `TELEGRAM_BOT_TOKEN` | Token bot dari BotFather |
+| `TELEGRAM_CHAT_ID` | ID chat Telegram pribadi yang akan menerima approval |
 | `GH_PAT` | PAT GitHub yang diperlukan workflow refresh token untuk update secret |
 
-## 2. Tes sebelum autopilot
+**Penting:** `TELEGRAM_CHAT_ID` adalah allowlist. Callback dari chat lain akan ditolak.
 
-**Jangan langsung membiarkan bot posting tanpa melihat hasil pertamanya.**
+## 2. Approval flow
 
-1. Actions → **Generate konten** → Run workflow.
-2. Buka `data/posts.json` dan baca beberapa hasil.
-3. Jika voice sudah cocok, workflow posting berikutnya akan mengambil item berstatus `approved` secara otomatis.
-4. Untuk simulasi posting manual: Actions → **Posting ke Threads** → Run workflow → `dry_run=true`.
-5. Untuk posting sungguhan secara manual, pilih `dry_run=false`.
+Setiap draft baru dibuat dengan:
 
-Setelah lolos tes awal, kamu tidak perlu menjalankan workflow satu per satu. Schedule akan bekerja otomatis.
+```json
+"status": "pending"
+```
+
+Workflow `telegram-approval.yml` berjalan setiap 5 menit dan melakukan dua hal:
+
+1. mengambil callback/button yang masuk dari Telegram;
+2. mencari draft `pending` yang belum pernah dinotifikasi lalu mengirimkannya ke Telegram.
+
+Pesan Telegram berbentuk:
+
+```text
+🤖 Draft Threads #123
+
+<draft>
+
+────────────
+Score: 89/100
+Hook: 9/10 · Specificity: 8/10
+Boldness: 9/10 · AI-ish: 1/10
+
+Pillar: freelance
+Format: strong_opinion
+
+[ ✅ Approve ] [ ❌ Reject ]
+```
+
+Score tersebut adalah **heuristic transparan**, bukan penilaian LLM. Tujuannya hanya membantu scanning cepat dari HP.
+
+Setelah `Approve`:
+
+```text
+pending → approved → posted
+```
+
+Setelah `Reject`:
+
+```text
+pending → rejected
+```
+
+Workflow posting hanya mengambil status `approved`, sehingga draft yang belum direview **tidak akan masuk Threads**.
 
 ## 3. Jadwal default
 
 GitHub Actions memakai UTC. Jadwal V2 dikonversi ke WIB (UTC+7):
 
 - Generate: **08:00 WIB setiap hari**
+- Telegram approval poll: **setiap 5 menit**
 - Post: **09:00 WIB**
 - Post: **13:00 WIB**
 - Post: **17:00 WIB**
 - Post: **21:00 WIB**
 
-Cron GitHub tidak menjamin presisi sampai detik dan dapat mengalami delay.
+GitHub cron tidak menjamin presisi sampai detik dan dapat mengalami delay.
 
 ## 4. Content Engine V2 (Groq)
 
-`config.json` sekarang punya beberapa lapisan. Generator menggunakan Groq melalui OpenAI-compatible Chat Completions API.
+Generator menggunakan Groq melalui OpenAI-compatible Chat Completions API.
 
-### Voice
+Model default:
 
 ```json
-"voice": {
-  "boldness": 0.78,
-  "directness": 0.88,
-  "opinionated": 0.72,
-  "playfulness": 0.42,
-  "sarcasm": 0.18,
-  "specificity": 0.86
-}
+"model": "openai/gpt-oss-120b",
+"reasoning_effort": "low",
+"max_completion_tokens": 3000
 ```
 
-Angka ini adalah **instruksi prompt**, bukan parameter API. Artinya kita menggunakannya untuk mengarahkan karakter tulisan.
+API key dibaca dari `GROQ_API_KEY`. Jangan menaruh key di `config.json` atau source code.
 
-### Hook Engine
+Generator menggunakan Structured Outputs dengan JSON Schema strict agar hasil model tidak bergantung pada Markdown/code fence.
 
-Generator diarahkan untuk memakai mekanisme seperti:
+## 5. Perubahan penting pada voice
 
-- contrarian
-- pattern interrupt
-- hard truth
-- curiosity gap
-- specific observation
-- direct challenge
-- unexpected comparison
-- myth busting
+Versi sebelumnya sudah memiliki Hook Engine, tetapi contoh hasil menunjukkan model masih cenderung membuat **mini-artikel**:
 
-### Anti-AI
+- `Pernah dengar...`
+- `Padahal...`
+- `Realitanya...`
+- `Lesson:`
+- `Myth:`
+- `Bandingkan:`
+- pertanyaan generik di akhir
 
-Ada daftar pola generik seperti:
+V2 sekarang secara eksplisit meminta:
 
-- `Banyak orang...`
-- `Di era digital...`
-- `Jika kamu ingin...`
-- `Berikut beberapa...`
-- `Pada akhirnya...`
-- `Semoga bermanfaat`
+- kalimat pertama harus bisa berdiri sebagai hook;
+- tension / POV muncul sejak awal;
+- ritme pendek dan whitespace strategis;
+- satu kalimat yang quotable;
+- tidak membuka dengan definisi topik;
+- tidak memakai label format secara literal;
+- tidak selalu mengakhiri post dengan pertanyaan;
+- tidak mengarang pengalaman pribadi.
 
-Generator diminta menghindari pola tersebut dan quality gate juga menolak beberapa generic opening yang paling jelas.
+Quality gate juga menolak beberapa pola tersebut secara deterministic.
 
-### Quality Gate
+## 6. Mengapa hasil contoh sebelumnya belum cukup Threads-first
 
-Sebelum masuk queue, post diperiksa untuk:
+Beberapa contoh yang kamu kirim memang masih punya masalah:
 
-- panjang minimum/maksimum
-- generic opening
-- terlalu banyak tanda seru/tanya
-- terlalu banyak hashtag
-- repetisi kata yang ekstrem
-- kemiripan dengan post sebelumnya
-- kalimat yang terlalu flat
+**#1** — `Pernah dengar orang bilang...` masih terasa seperti pembuka artikel edukasi. Insight-nya masuk akal, tetapi hook tidak cukup tajam.
 
-Ini bukan penilaian kualitas semantik sempurna, tetapi lapisan pengaman agar autopilot tidak langsung memasukkan output jelek ke antrean.
+**#2** — lebih baik karena ada kontras `sunset over lake` vs niche industri, tetapi ending `Tren foto Instagram itu cuma ilusi profit cepat` masih terdengar seperti slogan.
 
-## 5. Mengatur karakter akun
+**#3** — struktur ceritanya cocok untuk Threads, tetapi kalimat `Saya pernah...` melanggar aturan source karena automation tidak punya fakta bahwa pengalaman itu benar-benar terjadi.
 
-Mayoritas tuning dilakukan di `config.json`, bukan di Python.
+**#4** — `Lesson:` membuat format terlalu terlihat. Selain itu, `Saya pernah habiskan...` juga merupakan fabricated first-person experience jika tidak ada sumber.
+
+**#5** — cukup usable, tetapi terlalu seperti comparison article. Perlu POV yang lebih tajam dan tidak sekadar menyajikan trade-off dua sisi.
+
+**#6** — `Myth:` terlalu template-like dan contoh pengalaman pribadi juga tidak bersumber.
+
+**#7** — insight cukup konkret, tetapi penutup `seberapa penting...` terasa seperti engagement bait.
+
+**#8** — `Platform A` dan `Platform B` dengan angka royalti terlihat seperti fakta, padahal tidak ada sumber. Ini sekarang secara eksplisit dilarang.
+
+Jadi saya tidak hanya menaikkan `temperature` atau `boldness`. Problem utamanya ada pada **instruction hierarchy + format priors + quality gate**, bukan kecepatan API.
+
+## 7. Mengatur karakter akun
+
+Mayoritas tuning dilakukan di `config.json`.
 
 Jika output masih terlalu aman:
 
@@ -135,30 +183,41 @@ Jika output masih terlalu aman:
 "directness": 0.90
 ```
 
-Jika terlalu nyinyir/edgy, turunkan `boldness` atau `sarcasm`.
+Jika terlalu edgy, turunkan `boldness` atau `sarcasm`.
 
-Jika terlalu generik, naikkan `specificity` dan tambahkan contoh voice yang kamu sukai ke `writing_dna`.
+Jika terlalu generik, naikkan `specificity` dan tambahkan contoh voice yang benar-benar kamu sukai ke `writing_dna`.
 
-## 6. Mengatur frekuensi
+## 8. Mengatur frekuensi
 
-Saat ini targetnya 4 post/hari. Untuk mengubahnya, sesuaikan:
+Saat ini targetnya 4 post/hari.
+
+Sesuaikan:
 
 - `max_posts_per_day` di `config.json`
 - cron di `.github/workflows/post.yml`
 - `queue_target` dan `posts_per_generate` jika ingin buffer lebih besar/kecil
 
-Rekomendasi awal: **4 post/hari + queue 16**. Jangan langsung menaikkan frekuensi hanya karena automation sudah tersedia; kualitas dan variasi lebih penting.
+Untuk tahap ini, **4 post/hari + Telegram approval + queue 16** lebih aman daripada full autopilot.
 
-## 7. Token Threads
+## 9. Token Threads
 
 `refresh-token.yml` tetap disediakan untuk workflow refresh token mingguan. Pastikan `GH_PAT` mempunyai permission yang benar untuk memperbarui secret repository.
 
-## 8. Keamanan
+## 10. Keamanan
 
 - Jangan commit API key/token ke repo.
 - Gunakan GitHub Secrets.
 - Repo sebaiknya private.
 - Jangan memasukkan data pribadi ke prompt/history.
-- Review hasil beberapa hari pertama sebelum mempercayakan autopilot sepenuhnya.
+- Jangan memakai Telegram group sebagai approval channel kecuali memang diperlukan. Untuk penggunaan pribadi, private chat lebih sederhana.
+- Jika bot pernah dipasang webhook, hapus webhook terlebih dahulu karena Telegram tidak mengizinkan `getUpdates` berjalan bersamaan dengan outgoing webhook. citeturn0search4turn0search8
 
-\n## 9. Groq\n\nGenerator saat ini menggunakan `openai/gpt-oss-120b` melalui Groq. API key dibaca dari GitHub Secret `GROQ_API_KEY`; jangan menaruh key di `config.json` atau source code. Model dan parameter inference dapat diubah dari `config.json`.\n\nGroq mendukung Structured Outputs untuk model ini, sehingga generator meminta JSON Schema strict dan tidak bergantung pada parsing Markdown/code fence.\n
+### Mendapatkan `TELEGRAM_CHAT_ID`
+
+Setelah membuat bot, kirim `/start` ke bot. Dari mesin lokal yang memiliki `TELEGRAM_BOT_TOKEN`, jalankan:
+
+```bash
+TELEGRAM_BOT_TOKEN="TOKEN_DARI_BOTFATHER" python src/telegram_setup.py
+```
+
+Script hanya membaca update yang masuk dan mencetak `chat_id`; tidak menyimpan token atau mengubah state approval.

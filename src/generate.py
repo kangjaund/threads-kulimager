@@ -17,7 +17,7 @@ BANNED_GENERIC_STARTS = (
     "tahukah kamu", "berikut beberapa", "pernahkah kamu", "tidak bisa dipungkiri",
     "yang perlu kamu pahami", "ada beberapa hal", "kunci sukses adalah",
     "salah satu cara", "pada akhirnya", "dalam dunia freelance", "menjadi freelancer bukanlah",
-    "semoga bermanfaat", "tetap semangat"
+    "semoga bermanfaat", "tetap semangat", "lesson:", "myth:", "bandingkan:", "realitanya:", "pertanyaannya:"
 )
 
 
@@ -214,6 +214,13 @@ def quality_check(text, pool, max_chars):
         reasons.append("repetitive-words")
     if any(SequenceMatcher(None, low, other.lower()).ratio() >= SIMILARITY_LIMIT for other in pool):
         reasons.append("too-similar")
+    # Threads-first checks: reject common article/template patterns.
+    if re.match(r"^(lesson|myth|bandingkan|realitanya|pertanyaannya)\s*[:：]", low):
+        reasons.append("template-opening")
+    if re.match(r"^(saya|aku)\s+(pernah|sering|sempat)\b", low):
+        reasons.append("unsupported-first-person")
+    if low.count("padahal") >= 2 or low.count("realitanya") >= 2:
+        reasons.append("repeated-transition")
     # A post should contain at least one sentence boundary or line break; this avoids bland one-liners.
     if len(clean) > 100 and "." not in clean and "\n" not in text and "?" not in clean and "!" not in clean:
         reasons.append("flat-sentence")
