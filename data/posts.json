@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "id": 1,
+    "text": "Kamu lihat temen yang jual template Photoshop cuma 3 ribu, terus dia malah ngeluh nggak dapet klien. Kenapa? Karena dia jual produk yang udah banyak, bukan skill unik. Mulai dari satu tool yang kamu kuasai—misalnya Lightroom—bikin preset khusus, jual di marketplace kecil. Fokus pada niche, bukan volume. Hasilnya? Lebih sedikit transaksi, tapi margin lebih tinggi. #freelance",
+    "pillar": "peluang_lain",
+    "format": "specific_lesson",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 2,
+    "text": "Banyak kontributor microstock pakai judul ‘beautiful sunset’ tanpa riset keyword. Padahal, pencarian paling populer bukan ‘sunset’ melainkan ‘golden hour beach’ atau ‘silhouette city skyline’. Kalau kamu pakai tools riset, ubah judul dan tag, peluang gambar kamu naik 2‑3x. Setuju atau masih mau pakai judul generik?",
+    "pillar": "microstock",
+    "format": "discussion",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 3,
+    "text": "Remote job bukan soal kerja dari pantai, melainkan kemampuan mengelola ekspektasi tanpa tatap muka. Kalau kamu belum bisa menuliskan progress harian yang jelas, siap-siap ditekan deadline. Tanpa skill komunikasi async yang solid, kamu bakal cepat terpinggirkan.",
+    "pillar": "remote_job",
+    "format": "strong_opinion",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 4,
+    "text": "Strategi harga “lowball” vs “premium”. Lowball menarik klien cepat, tapi kamu terjebak proyek mikro dan harus kerja lebih lama. Premium menolak banyak tawaran, tapi tiap klien memberi ruang kreatif dan bayaran layak. Pilih mana? Coba satu minggu pakai premium, lihat ROI.",
+    "pillar": "freelance",
+    "format": "comparison",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 5,
+    "text": "Bayangin kamu beli domain .id, bikin blog tentang AI tools, lalu terus menulis review tiap minggu. Setelah tiga bulan, trafik stabil, tapi revenue nol. Kenapa? Karena kamu hanya memberi informasi, tidak menawarkan nilai tambah yang dapat dibeli—misalnya kursus singkat atau template. Diskusi: apa nilai tambah yang paling mudah kamu tawarkan?",
+    "pillar": "peluang_lain",
+    "format": "mini_story",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 6,
+    "text": "Kamu lihat freelancer UI/UX yang selalu posting portofolio lengkap, tapi belum pernah dapat kontrak besar. Masalahnya: portofolio itu visual, bukan bukti proses. Klien sebenarnya butuh studi kasus: brief, tantangan, solusi, hasil. Tanpa itu, portofolio cuma hiasan.",
+    "pillar": "freelance",
+    "format": "mini_story",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 7,
+    "text": "Kerja nonstop itu cuma ilusi produktif. Orang-orang suka pamer jam kerja 12‑15 jam, padahal mereka cuma menumpuk tugas yang belum selesai. Konsistensi 2‑3 jam fokus tiap hari menghasilkan lebih banyak output stabil daripada sprint maraton yang bikin burnout. Jadi, berhentilah bangga dengan overtime, fokus pada ritme yang bisa dipertahankan.",
+    "pillar": "mindset",
+    "format": "myth_vs_reality",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  },
+  {
+    "id": 8,
+    "text": "Lihat temen yang tiap minggu ambil proyek “besar” biar kelihatan pro. Dia selalu deadline lewat, klien marah, tapi tetap bangga karena “kerja di level atas”. Ironis, dia nggak pernah melengkapi skill desain UI dengan dasar riset pengguna. Akibatnya, portofolio penuh konsep, bukan hasil yang dibayar. Moralnya: bangun fondasi dulu, baru ke proyek megah.",
+    "pillar": "mindset",
+    "format": "strong_opinion",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-05T18:37:41+00:00"
+  }
+]
