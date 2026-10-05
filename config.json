@@ -1,0 +1,53 @@
+{
+  "niche": "freelance, remote job, microstock, dan peluang penghasilan online lainnya",
+  "audience": "pemula di Indonesia yang ingin mencari penghasilan tambahan atau beralih ke kerja fleksibel",
+  "language": "Bahasa Indonesia yang santai, natural, dan jelas (bukan bahasa kaku)",
+
+  "model": "gemini-flash-latest",
+  "temperature": 0.9,
+
+  "max_chars": 450,
+  "require_approval": true,
+  "queue_target": 12,
+  "posts_per_generate": 4,
+  "history_window": 30,
+  "max_posts_per_day": 8,
+  "publish_delay_seconds": 8,
+
+  "style_weights": {
+    "edukatif": 0.6,
+    "kontroversial": 0.2,
+    "storytelling": 0.2
+  },
+
+  "styles": {
+    "edukatif": "Jelas, praktis, to the point. Berikan satu insight yang bisa langsung dipakai pembaca.",
+    "kontroversial": "Provokatif tapi benar: opini tajam atau kontrarian yang tetap jujur secara fakta dan bisa dipertanggungjawabkan. Hook kuat di kalimat pertama. Dilarang klaim palsu, dilarang memancing amarah dengan data karangan, dilarang menyerang kelompok orang.",
+    "storytelling": "Narasi singkat berbentuk ilustrasi/hipotetis (misalnya 'Bayangkan seorang freelancer pemula...') dengan pelajaran jelas di akhir. Jangan mengklaim ini sebagai pengalaman pribadi nyata."
+  },
+
+  "pillars": {
+    "freelance": "Tips memulai dan mengembangkan karier freelance (platform, portofolio, menentukan harga, klien, komunikasi).",
+    "remote_job": "Cara mencari, melamar, dan lolos pekerjaan remote (CV, wawancara, skill, etika kerja remote). Hanya tips umum, tanpa menyebut lowongan spesifik.",
+    "microstock": "Dasar-dasar menjual foto/video/vektor/ilustrasi di microstock (riset niche, keyword, kualitas, workflow, kesalahan umum).",
+    "peluang_lain": "Peluang penghasilan online lain secara realistis (produk digital, affiliate, content creator, jasa) beserta risikonya.",
+    "mindset": "Mindset dan kebiasaan untuk membangun penghasilan tambahan secara konsisten dan realistis."
+  },
+
+  "formats": {
+    "tips_singkat": "Satu tips praktis dalam 2-4 kalimat.",
+    "mitos_vs_fakta": "Bantah satu mitos umum, lalu jelaskan faktanya.",
+    "daftar_3_poin": "Daftar 3 poin singkat dengan pembuka satu kalimat.",
+    "pertanyaan_diskusi": "Pertanyaan pemancing diskusi yang relevan, dengan konteks singkat.",
+    "cerita_mini": "Ilustrasi/cerita mini hipotetis dengan pelajaran jelas."
+  },
+
+  "rules": [
+    "Hanya konten evergreen (tips, cara, strategi umum). Jangan menyebut lowongan kerja, nama perusahaan, atau situs/tool tertentu kecuali yang sangat umum dan pasti ada (misalnya Upwork, Fiverr, Shutterstock, Adobe Stock).",
+    "Dilarang mengarang nama, angka, statistik, atau kutipan.",
+    "Dilarang klaim penghasilan, janji hasil, atau kata seperti 'pasti', 'cepat kaya', 'tanpa modal', 'tanpa usaha'.",
+    "Dilarang merendahkan atau menyerang kelompok orang tertentu.",
+    "Tanpa link. Hashtag maksimal 1, emoji maksimal 2.",
+    "Setiap postingan harus berdiri sendiri; jangan menyebut 'postingan sebelumnya' atau 'thread ini'."
+  ]
+}
