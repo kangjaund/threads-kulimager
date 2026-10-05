@@ -57,5 +57,10 @@ def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
         except requests.RequestException as exc:
             last = type(exc).__name__
         if attempt < retries:
-            time.sleep(backoff * attempt)
+            retry_after = None
+            try:
+                retry_after = float(resp.headers.get("Retry-After", "")) if "resp" in locals() else None
+            except (ValueError, TypeError):
+                retry_after = None
+            time.sleep(max(backoff * attempt, retry_after or 0))
     raise RuntimeError(f"Request gagal setelah {retries} percobaan ({last}).")

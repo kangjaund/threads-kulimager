@@ -2,7 +2,7 @@
 
 Pipeline otomatis untuk akun Threads:
 
-**Gemini → Content DNA + Hook Engine → Quality Gate → Queue → Threads API**
+**Groq → Content DNA + Hook Engine → Quality Gate → Queue → Threads API**
 
 Versi V2 dirancang supaya output tidak terasa seperti artikel AI generik. Generator diberi voice yang lebih berani, mekanisme hook, aturan anti-AI, dan quality gate deterministic sebelum post masuk antrean.
 
@@ -35,7 +35,7 @@ Queue ditargetkan **16 post**, generator mengisi maksimal **8 post/run**, dan sc
 
 | Secret | Isi |
 |---|---|
-| `GEMINI_API_KEY` | API key Google AI Studio |
+| `GROQ_API_KEY` | API key GroqCloud |
 | `THREADS_USER_ID` | ID akun Threads |
 | `THREADS_ACCESS_TOKEN` | Access token Threads |
 | `GH_PAT` | PAT GitHub yang diperlukan workflow refresh token untuk update secret |
@@ -64,9 +64,9 @@ GitHub Actions memakai UTC. Jadwal V2 dikonversi ke WIB (UTC+7):
 
 Cron GitHub tidak menjamin presisi sampai detik dan dapat mengalami delay.
 
-## 4. Content Engine V2
+## 4. Content Engine V2 (Groq)
 
-`config.json` sekarang punya beberapa lapisan:
+`config.json` sekarang punya beberapa lapisan. Generator menggunakan Groq melalui OpenAI-compatible Chat Completions API.
 
 ### Voice
 
@@ -160,3 +160,5 @@ Rekomendasi awal: **4 post/hari + queue 16**. Jangan langsung menaikkan frekuens
 - Repo sebaiknya private.
 - Jangan memasukkan data pribadi ke prompt/history.
 - Review hasil beberapa hari pertama sebelum mempercayakan autopilot sepenuhnya.
+
+\n## 9. Groq\n\nGenerator saat ini menggunakan `openai/gpt-oss-120b` melalui Groq. API key dibaca dari GitHub Secret `GROQ_API_KEY`; jangan menaruh key di `config.json` atau source code. Model dan parameter inference dapat diubah dari `config.json`.\n\nGroq mendukung Structured Outputs untuk model ini, sehingga generator meminta JSON Schema strict dan tidak bergantung pada parsing Markdown/code fence.\n

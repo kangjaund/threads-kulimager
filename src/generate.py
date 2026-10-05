@@ -1,4 +1,4 @@
-"""Generate Threads-first content with Gemini, quality-gate it, and queue it."""
+"""Generate Threads-first content with Groq, quality-gate it, and queue it."""
 import json
 import random
 import re
@@ -8,7 +8,7 @@ from difflib import SequenceMatcher
 
 from common import load_config, load_posts, now_iso, request_with_retry, require_env, save_posts
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MAX_ROUNDS = 4
 SIMILARITY_LIMIT = 0.68
 MIN_CHARS = 45
@@ -130,29 +130,67 @@ def parse_items(raw):
     return texts
 
 
-def call_gemini(cfg, prompt):
-    key = require_env("GEMINI_API_KEY")
+def call_groq(cfg, prompt):
+    """Generate structured JSON through Groq's OpenAI-compatible Chat Completions API."""
+    key = require_env("GROQ_API_KEY")
+    schema = {
+        "type": "object",
+        "properties": {
+            "posts": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {"text": {"type": "string"}},
+                    "required": ["text"],
+                    "additionalProperties": False,
+                },
+            }
+        },
+        "required": ["posts"],
+        "additionalProperties": False,
+    }
     body = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": cfg.get("temperature", 1.0),
-            "responseMimeType": "application/json",
-            "responseSchema": {
-                "type": "ARRAY",
-                "items": {"type": "OBJECT", "properties": {"text": {"type": "STRING"}}, "required": ["text"]},
+        "model": cfg["model"],
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Kamu adalah penulis Threads berbahasa Indonesia. "
+                    "Ikuti instruksi user dengan ketat dan keluarkan hanya JSON sesuai schema."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": cfg.get("temperature", 1.0),
+        "max_completion_tokens": cfg.get("max_completion_tokens", 3000),
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "threads_posts",
+                "strict": True,
+                "schema": schema,
             },
         },
     }
-    resp = request_with_retry("POST", GEMINI_URL.format(model=cfg["model"]),
-                              headers={"x-goog-api-key": key, "Content-Type": "application/json"}, json=body)
+    if cfg.get("reasoning_effort"):
+        body["reasoning_effort"] = cfg["reasoning_effort"]
+
+    resp = request_with_retry(
+        "POST",
+        GROQ_URL,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+        },
+        json=body,
+    )
     if not resp.ok:
-        raise RuntimeError(f"Gemini error {resp.status_code}: {resp.text[:400]}")
-    data = resp.json()
+        raise RuntimeError(f"Groq error {resp.status_code}: {resp.text[:400]}")
     try:
-        parts = data["candidates"][0]["content"]["parts"]
-    except (KeyError, IndexError):
-        raise RuntimeError(f"Respons Gemini tidak terduga: {str(data)[:400]}")
-    raw = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        data = resp.json()
+        raw = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError, ValueError):
+        raise RuntimeError(f"Respons Groq tidak terduga: {str(data)[:400]}")
     return parse_items(raw)
 
 
@@ -204,7 +242,7 @@ def main():
         assignments = build_assignments(cfg, recent + accepted, batch_size)
         prompt = build_prompt(cfg, assignments, avoid_texts + [a["text"] for a in accepted])
         try:
-            texts = call_gemini(cfg, prompt)
+            texts = call_groq(cfg, prompt)
         except (RuntimeError, ValueError) as exc:
             print(f"Putaran {round_no} gagal: {exc}")
             continue
