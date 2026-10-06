@@ -4,7 +4,7 @@ Pipeline semi-autopilot untuk akun Threads:
 
 **Groq → Content DNA + Hook Engine → Quality Gate → Telegram Approval → Queue → Threads API**
 
-Generator membuat draft, tetapi **tidak boleh posting sebelum kamu approve dari Telegram**.
+Generator membuat draft dan mengirimnya ke Telegram. Defaultnya **mode veto**: draft diposting otomatis di slot berikutnya **kecuali kamu menekan Reject**. Tekan Approve hanya bila ingin sebuah draft naik lebih dulu.
 
 ## Cara kerja
 
@@ -95,7 +95,32 @@ Setelah `Reject`:
 pending → rejected
 ```
 
-Workflow posting hanya mengambil status `approved`, sehingga draft yang belum direview **tidak akan masuk Threads**.
+Pada mode veto, workflow posting mengambil draft `approved` atau `pending` yang sudah lewat jendela veto (lihat bagian *Mode veto*). Draft `rejected` tidak akan pernah diposting.
+
+## Mode veto (default)
+
+Tiap slot posting memilih draft berikutnya (id terkecil lebih dulu) yang memenuhi salah satu syarat:
+
+- statusnya `approved` (kamu menekan Approve), atau
+- statusnya `pending`, **sudah terkirim ke Telegram**, dan sudah lewat jendela veto (default **30 menit** sejak terkirim).
+
+Artinya: kamu cukup menekan **Reject** pada draft yang tidak kamu mau, sebelum jam posting. Sisanya terbit sendiri.
+
+Pengaman:
+
+- Draft yang belum pernah terkirim ke Telegram **tidak pernah** diposting otomatis. Kalau Telegram bermasalah, tidak ada yang terbit tanpa kesempatan veto.
+- Tombol Reject diproses tepat sebelum tiap run posting, jadi Reject yang kamu tekan sebelum jam posting selalu menang.
+- Postingan otomatis diberi tanda `auto_approved_at` di `posts.json`.
+
+Pengaturan opsional (tidak wajib ada di `config.json`; kalau tidak ada, default di bawah dipakai):
+
+```json
+"approval_mode": "veto",
+"veto_window_minutes": 30
+```
+
+- `"approval_mode": "manual"` mengembalikan ke perilaku lama: hanya draft `approved` yang diposting.
+- `"require_approval": false` (yang sudah ada di config) membuat draft langsung `approved` sejak dibuat, alias full otomatis tanpa review.
 
 ## 3. Jadwal default
 
