@@ -85,5 +85,77 @@
     "created_at": "2026-10-06T06:44:04+00:00",
     "telegram_message_id": 26,
     "telegram_notified_at": "2026-10-06T06:44:22+00:00"
+  },
+  {
+    "id": 17,
+    "text": "Membuat produk digital vs menjual jasa freelance: produk digital memberi pendapatan pasif, tapi butuh waktu riset pasar dan update terus-menerus. Jasa freelance cash‑flow cepat, tapi tergantung klien. Pilih salah satu dulu, jangan coba keduanya sekaligus, kalau tidak kamu bakal terjebak di antara dua setengah.\n#bisnis",
+    "pillar": "peluang_lain",
+    "format": "comparison",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 28,
+    "telegram_notified_at": "2026-10-06T11:47:47+00:00"
+  },
+  {
+    "id": 18,
+    "text": "Mitos: Affiliate marketing bakal bikin kamu tidur sambil uang mengalir. Realita: Tanpa traffic yang konsisten, komisi hampir nol. Bayangin kamu menulis review produk yang relevan, lalu mengarahkan 3 orang klik per minggu—hasilnya? Cukup untuk bayar domain, bukan liburan.",
+    "pillar": "peluang_lain",
+    "format": "myth_vs_reality",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 29,
+    "telegram_notified_at": "2026-10-06T11:47:49+00:00"
+  },
+  {
+    "id": 19,
+    "text": "Opini: Menghabiskan 80% waktu belajar skill baru itu overkill. Fokus pada satu skill sampai kamu bisa menguasainya 20% saja—itu sudah cukup untuk menghasilkan nilai di pasar freelance. Lebih banyak skill bukan berarti lebih banyak uang.",
+    "pillar": "mindset",
+    "format": "strong_opinion",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 30,
+    "telegram_notified_at": "2026-10-06T11:47:51+00:00"
+  },
+  {
+    "id": 20,
+    "text": "Diskusi: Di microstock, banyak kontributor menebak kata kunci ‘sunset’, ‘nature’ karena aman. Tapi data pencarian menunjukkan niche seperti ‘urban decay’ atau ‘minimalist interior’ memiliki kompetisi jauh lebih rendah. Apakah kalian lebih suka main aman atau eksplor niche?",
+    "pillar": "microstock",
+    "format": "discussion",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 31,
+    "telegram_notified_at": "2026-10-06T11:47:53+00:00"
+  },
+  {
+    "id": 21,
+    "text": "Aku masih bingung, harusnya melamar remote job lewat platform global atau jaringan pribadi? Platform global beri banyak listing, tapi respons sering lambat. Jaringan pribadi cepat, tapi peluang terbatas. Mana yang lebih efisien untuk dapet tawaran konkret?",
+    "pillar": "remote_job",
+    "format": "mini_story",
+    "style": "minta_pencerahan",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 32,
+    "telegram_notified_at": "2026-10-06T11:47:54+00:00"
+  },
+  {
+    "id": 22,
+    "text": "Mitos: Freelance itu kerja kapan saja, jadi kamu bisa pilih jam paling nyaman. Realita: Klien tetap mengharapkan deadline ketat dan respon cepat, terutama di zona waktu mereka. Jadi, kebebasan itu lebih pada cara kamu atur workflow, bukan jam kerja.",
+    "pillar": "freelance",
+    "format": "myth_vs_reality",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T11:47:42+00:00",
+    "telegram_message_id": 33,
+    "telegram_notified_at": "2026-10-06T11:47:56+00:00"
   }
 ]
