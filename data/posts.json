@@ -1,1 +1,98 @@
-[]
+[
+  {
+    "id": 1,
+    "text": "Remote job vs freelance: remote posisi full‑time tampaknya aman, tapi justru bikinmu terjebak jam kerja 9‑5 tanpa kontrol tarif. Freelance memberi kebebasan tarif, tapi tanpa jaminan stabilitas. Pilih yang mana? Tergantung apakah kamu lebih takut kehilangan cash flow atau kebebasan harga.",
+    "pillar": "remote_job",
+    "format": "comparison",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 11,
+    "telegram_notified_at": "2026-10-06T04:48:20+00:00"
+  },
+  {
+    "id": 2,
+    "text": "Ada kontributor microstock yang menghabiskan 3 jam edit satu foto karena takut ‘tidak cukup unik’. Hasilnya? 5 foto lain yang bagus, terjual lebih cepat, malah bikin portofolio lebih konsisten. Kadang perfectionism justru memperlambat penghasilan.",
+    "pillar": "microstock",
+    "format": "mini_story",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 12,
+    "telegram_notified_at": "2026-10-06T04:48:21+00:00"
+  },
+  {
+    "id": 3,
+    "text": "Kenapa klien selalu minta revisi “sedikit” tapi menambah scope? Karena mereka menilai nilai kerja berdasarkan waktu mereka menghabiskan. Jadi, kalau kamu tidak set batas revisi di kontrak, siap-siap jadi ‘free‑lancer’ mereka.",
+    "pillar": "freelance",
+    "format": "discussion",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 13,
+    "telegram_notified_at": "2026-10-06T04:48:23+00:00"
+  },
+  {
+    "id": 4,
+    "text": "Opini: Jika kamu masih mengukur progres freelance dengan jumlah jam kerja, kamu salah arah. Fokuslah pada nilai yang dihasilkan untuk klien, bukan berapa lama kamu menatap layar. Nilai = uang, jam = burnout.",
+    "pillar": "mindset",
+    "format": "strong_opinion",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 14,
+    "telegram_notified_at": "2026-10-06T04:48:25+00:00"
+  },
+  {
+    "id": 5,
+    "text": "Specific lesson: Saat melamar remote job, ubah CV jadi ‘project portfolio’. Cantumkan hasil konkret, bukan hanya deskripsi tugas. Recruiter remote menilai output, bukan lama pengalaman.",
+    "pillar": "remote_job",
+    "format": "specific_lesson",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 15,
+    "telegram_notified_at": "2026-10-06T04:48:27+00:00"
+  },
+  {
+    "id": 6,
+    "text": "Microstock: upload foto di 5 platform vs fokus di 2 yang paling relevan. Lebih banyak platform memberi exposure, tapi menguras waktu edit metadata. Fokus pada 2 platform niche dapat meningkatkan royalty per foto karena kualitas dan relevansi yang lebih tinggi.",
+    "pillar": "microstock",
+    "format": "comparison",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 16,
+    "telegram_notified_at": "2026-10-06T04:48:28+00:00"
+  },
+  {
+    "id": 7,
+    "text": "Strong opinion: Menolak kerja “boleh kerja dari mana saja” kalau klien belum siap dengan asinkron komunikasi. Tanpa ekspektasi respon jelas, remote work berubah jadi stress marathon, bukan freedom.",
+    "pillar": "freelance",
+    "format": "strong_opinion",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 17,
+    "telegram_notified_at": "2026-10-06T04:48:30+00:00"
+  },
+  {
+    "id": 8,
+    "text": "Affiliate itu bukan “pasang link, duduk manis, duit masuk”. Kebanyakan orang pikir cuma klik‑klik aja, padahal kamu harus terus produksi konten yang relevan, optimasi SEO, dan support audience. Tanpa itu, link itu cuma hiasan di bio. Jadi jangan harap passive income tanpa kerja berulang‑ulang.",
+    "pillar": "peluang_lain",
+    "format": "myth_vs_reality",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T04:48:14+00:00",
+    "telegram_message_id": 18,
+    "telegram_notified_at": "2026-10-06T04:48:32+00:00"
+  }
+]
