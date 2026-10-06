@@ -31,6 +31,15 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # Proses tombol Approve/Reject yang kamu tekan di Telegram sejak run terakhir.
+      # continue-on-error: kalau Telegram bermasalah, draft yang sudah approved tetap diposting.
+      - name: Proses approval Telegram
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python src/telegram_approval.py
+
       - name: Posting
         env:
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
@@ -43,11 +52,19 @@ jobs:
         run: |
           git config user.name "threads-bot"
           git config user.email "threads-bot@users.noreply.github.com"
-          git add data/posts.json
+          git add data/posts.json data/telegram_offset.json
           if git diff --cached --quiet; then
             echo "Tidak ada perubahan antrean."
-          else
-            git commit -m "chore: update status posting"
-            git pull --rebase --autostash
-            git push
+            exit 0
           fi
+          git commit -m "chore: update status posting"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash && git push; then
+              exit 0
+            fi
+            echo "Push gagal (percobaan $i/5), mencoba lagi..."
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 3))
+          done
+          echo "Push gagal setelah 5 percobaan."
+          exit 1

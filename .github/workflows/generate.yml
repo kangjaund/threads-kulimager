@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
 
+# Semua workflow yang menulis data/posts.json memakai group yang sama.
 concurrency:
   group: posts-queue
   cancel-in-progress: false
@@ -31,16 +32,34 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python src/generate.py
 
+      # Kirim draft baru ke Telegram. Kalau Telegram bermasalah, workflow tetap lanjut
+      # dan draft akan dikirim pada run berikutnya.
+      - name: Kirim draft ke Telegram
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python src/telegram_approval.py
+
       - name: Commit antrean
         if: always()
         run: |
           git config user.name "threads-bot"
           git config user.email "threads-bot@users.noreply.github.com"
-          git add data/posts.json
+          git add data/posts.json data/telegram_offset.json
           if git diff --cached --quiet; then
             echo "Tidak ada perubahan antrean."
-          else
-            git commit -m "chore: update antrean posts"
-            git pull --rebase --autostash
-            git push
+            exit 0
           fi
+          git commit -m "chore: update antrean posts"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash && git push; then
+              exit 0
+            fi
+            echo "Push gagal (percobaan $i/5), mencoba lagi..."
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 3))
+          done
+          echo "Push gagal setelah 5 percobaan."
+          exit 1
