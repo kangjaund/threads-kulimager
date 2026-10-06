@@ -31,6 +31,21 @@ def tg_call(token, method, **kwargs):
     return data["result"]
 
 
+def safe_answer(token, callback_id, text=None):
+    """Konfirmasi tombol ke Telegram. Hanya efek visual di HP, jadi kegagalan diabaikan.
+
+    Telegram menolak konfirmasi jika tombol sudah terlalu lama ditekan (error 400
+    'query is too old'), dan itu normal karena approval diproses secara terjadwal.
+    """
+    payload = {"callback_query_id": callback_id}
+    if text:
+        payload["text"] = text
+    try:
+        tg_call(token, "answerCallbackQuery", json=payload)
+    except RuntimeError as exc:
+        print(f"Info: konfirmasi tombol dilewati ({str(exc)[:120]})")
+
+
 def chat_id_matches(value, configured):
     return str(value) == str(configured)
 
@@ -209,14 +224,14 @@ def process_updates(token, chat_id, posts):
         if callback:
             sender_chat = callback.get("message", {}).get("chat", {}).get("id")
             if not chat_id_matches(sender_chat, chat_id):
-                tg_call(token, "answerCallbackQuery", json={"callback_query_id": callback["id"], "text": "Unauthorized chat."})
+                safe_answer(token, callback["id"], "Unauthorized chat.")
                 continue
             data = callback.get("data", "")
             if ":" in data:
                 action, post_id = data.split(":", 1)
                 if process_action(token, chat_id, posts, action, post_id, callback.get("message")):
                     changed = True
-            tg_call(token, "answerCallbackQuery", json={"callback_query_id": callback["id"]})
+            safe_answer(token, callback["id"])
             continue
 
         message = update.get("message")
