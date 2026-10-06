@@ -20,11 +20,14 @@
     "pillar": "peluang_lain",
     "format": "mini_story",
     "style": "edukatif_tajam",
-    "status": "pending",
+    "status": "posted",
     "attempts": 0,
     "created_at": "2026-10-06T06:44:04+00:00",
     "telegram_message_id": 21,
-    "telegram_notified_at": "2026-10-06T06:44:13+00:00"
+    "telegram_notified_at": "2026-10-06T06:44:13+00:00",
+    "auto_approved_at": "2026-10-06T12:16:23+00:00",
+    "posted_at": "2026-10-06T12:16:23+00:00",
+    "threads_post_id": "18121458514723686"
   },
   {
     "id": 12,
