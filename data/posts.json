@@ -202,5 +202,53 @@
     "created_at": "2026-10-06T12:15:38+00:00",
     "telegram_message_id": 36,
     "telegram_notified_at": "2026-10-06T12:15:47+00:00"
+  },
+  {
+    "id": 26,
+    "text": "Aku lagi mikir, kalau fokus pada \"growth mindset\" berarti harus terus coba skill baru, tapi itu malah bikin timeline proyek jadi berantakan. Lebih baik ngunci satu skill yang bisa dijual terus, lalu upgrade perlahan? Atau malah terus berputar di tren biar tetap relevan? 🤔",
+    "pillar": "mindset",
+    "format": "discussion",
+    "style": "minta_pencerahan",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T22:46:03+00:00",
+    "telegram_message_id": 37,
+    "telegram_notified_at": "2026-10-06T22:46:09+00:00"
+  },
+  {
+    "id": 27,
+    "text": "Observasi: tim remoteku pakai tool task board yang terintegrasi dengan chat. Hasilnya, update status otomatis muncul di channel, jadi tidak perlu spam \"progress update\" tiap jam. Mengurangi noise, tim jadi lebih fokus pada deliverable, bukan pada siapa yang paling aktif chat.\n#productivity",
+    "pillar": "remote_job",
+    "format": "specific_lesson",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T22:46:03+00:00",
+    "telegram_message_id": 38,
+    "telegram_notified_at": "2026-10-06T22:46:10+00:00"
+  },
+  {
+    "id": 28,
+    "text": "Bandingkan dua pendekatan pricing: paket fixed-price vs hourly rate. Fixed-price memberi klien rasa aman, tapi kamu harus menebak effort tepat. Hourly memberi transparansi, tapi klien cenderung mikir kamu “lambat”. Trade‑offnya? Fixed‑price menuntut scope yang jelas, hourly menuntut kepercayaan pada proses.\n#freelance",
+    "pillar": "freelance",
+    "format": "comparison",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T22:46:03+00:00",
+    "telegram_message_id": 39,
+    "telegram_notified_at": "2026-10-06T22:46:12+00:00"
+  },
+  {
+    "id": 29,
+    "text": "Story: Aku pernah coba jual ebook desain UI di platform micro‑learning. Ternyata, traffic organik sangat minim tanpa komunitas. Saya bertanya pada diri sendiri: Haruskah saya invest waktu buat newsletter dulu, atau langsung ke iklan berbayar? Poinnya, produk digital butuh “audience first”, bukan “product first”.",
+    "pillar": "peluang_lain",
+    "format": "help_seeking",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T22:46:03+00:00",
+    "telegram_message_id": 40,
+    "telegram_notified_at": "2026-10-06T22:46:14+00:00"
   }
 ]
