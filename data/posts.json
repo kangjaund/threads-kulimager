@@ -98,5 +98,101 @@
     "telegram_message_id": 18,
     "telegram_notified_at": "2026-10-06T04:48:32+00:00",
     "approved_at": "2026-10-06T05:26:44+00:00"
+  },
+  {
+    "id": 9,
+    "text": "Aku lagi mikir, mau coba jual template desain di marketplace kecil, tapi takut gak ada pembeli. Ada yang pernah pakai model royalty‑free vs lisensi eksklusif? Mana yang lebih realistis buat pendapatan bulanan, dan berapa lama biasanya sampai break‑even?",
+    "pillar": "peluang_lain",
+    "format": "help_seeking",
+    "style": "minta_pencerahan",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 19,
+    "telegram_notified_at": "2026-10-06T06:44:10+00:00"
+  },
+  {
+    "id": 10,
+    "text": "Sadar gak, saat kamu terus menambah skill tanpa menguji nilai pasar, kamu cuma mengumpulkan CV yang tebal.\n\nCoba deh, pilih satu skill, buat satu output nyata, ukur reaksi klien.\n\nKalau hasilnya positif, baru pertimbangkan skill berikutnya.\n\nBagaimana cara kalian menilai kapan skill baru cukup ‘siap jual’?",
+    "pillar": "mindset",
+    "format": "specific_lesson",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 20,
+    "telegram_notified_at": "2026-10-06T06:44:12+00:00"
+  },
+  {
+    "id": 11,
+    "text": "Bayangin kamu upload 10 foto landscape ke microstock, tapi semua pakai kata kunci ‘sunset’ karena terasa aman.\n\nHasilnya? Semua foto terbenam di pencarian, penjualan stagnan.\n\nSebenarnya, mengeksplorasi kata kunci niche seperti ‘golden hour over rice fields’ bisa meningkatkan visibility meski volume pencarian lebih kecil.\n\nPoin penting: kadang spesifik > populer.",
+    "pillar": "peluang_lain",
+    "format": "mini_story",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 21,
+    "telegram_notified_at": "2026-10-06T06:44:13+00:00"
+  },
+  {
+    "id": 12,
+    "text": "Sering denger freelance harus ‘always overdeliver’ supaya dapet repeat order. Padahal, overdeliver bisa memicu ekspektasi tak realistis dan menggerogoti margin.\n\nKalau kamu menetapkan scope jelas dan tetap deliver tepat waktu, klien biasanya lebih menghargai profesionalisme.\n\nSetuju gak? Ada pengalaman di mana overdeliver malah bikin masalah?",
+    "pillar": "freelance",
+    "format": "discussion",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 22,
+    "telegram_notified_at": "2026-10-06T06:44:15+00:00"
+  },
+  {
+    "id": 13,
+    "text": "Aku masih bingung, harusnya fokus pada ‘consistent output’ atau ‘high‑impact project’?\n\nJika saya terus mengerjakan banyak proyek kecil, revenue stabil tapi tidak ada growth.\n\nTapi kalau fokus satu proyek besar, risiko gagal lebih tinggi.\n\nMana yang lebih efisien untuk membangun reputasi jangka panjang di bidang kreatif?",
+    "pillar": "mindset",
+    "format": "help_seeking",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 23,
+    "telegram_notified_at": "2026-10-06T06:44:17+00:00"
+  },
+  {
+    "id": 14,
+    "text": "Mitos: remote job berarti kamu bisa kerja kapan saja, santai.\n\nRealita: kebanyakan tim mengandalkan asinkron, tapi tetap ada jam kerja ‘core hours’ dan deadline ketat.\n\nKamu harus tetap menyesuaikan ritme pribadi dengan ekspektasi tim, atau risiko burnout.\n\nBagaimana kalian menyeimbangkan fleksibilitas dengan akuntabilitas?",
+    "pillar": "remote_job",
+    "format": "myth_vs_reality",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 24,
+    "telegram_notified_at": "2026-10-06T06:44:18+00:00"
+  },
+  {
+    "id": 15,
+    "text": "Upload foto ke 5 platform microstock vs konsentrasi di 2 platform niche.\n\n5 platform: exposure luas, tapi butuh ekstra waktu edit metadata tiap situs.\n\n2 platform: workflow lebih cepat, tarif rata‑rata lebih tinggi karena niche spesifik.\n\nMana yang lebih menguntungkan menurut kalian? Atau ada strategi hybrid yang lebih efisien?",
+    "pillar": "microstock",
+    "format": "comparison",
+    "style": "diskusi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 25,
+    "telegram_notified_at": "2026-10-06T06:44:20+00:00"
+  },
+  {
+    "id": 16,
+    "text": "Seorang kontributor baru menghabiskan 2 jam mengedit satu foto untuk mencapai standar “perfect”.\n\nSetelah upload, foto itu hanya terjual 1 kali dalam sebulan.\n\nJika dia mengurangi editing menjadi 30 menit, dia bisa upload 4 foto lebih banyak, total penjualan naik 3 kali lipat.\n\nLesson: dalam microstock, volume dengan kualitas cukup sering mengalahkan perfeksionisme.",
+    "pillar": "microstock",
+    "format": "specific_lesson",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T06:44:04+00:00",
+    "telegram_message_id": 26,
+    "telegram_notified_at": "2026-10-06T06:44:22+00:00"
   }
 ]
