@@ -1,41 +1,5 @@
 [
   {
-    "id": 1,
-    "text": "Remote job vs freelance: remote posisi full‑time tampaknya aman, tapi justru bikinmu terjebak jam kerja 9‑5 tanpa kontrol tarif. Freelance memberi kebebasan tarif, tapi tanpa jaminan stabilitas. Pilih yang mana? Tergantung apakah kamu lebih takut kehilangan cash flow atau kebebasan harga.",
-    "pillar": "remote_job",
-    "format": "comparison",
-    "style": "hot_take",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 11,
-    "telegram_notified_at": "2026-10-06T04:48:20+00:00"
-  },
-  {
-    "id": 2,
-    "text": "Ada kontributor microstock yang menghabiskan 3 jam edit satu foto karena takut ‘tidak cukup unik’. Hasilnya? 5 foto lain yang bagus, terjual lebih cepat, malah bikin portofolio lebih konsisten. Kadang perfectionism justru memperlambat penghasilan.",
-    "pillar": "microstock",
-    "format": "mini_story",
-    "style": "observasi",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 12,
-    "telegram_notified_at": "2026-10-06T04:48:21+00:00"
-  },
-  {
-    "id": 3,
-    "text": "Kenapa klien selalu minta revisi “sedikit” tapi menambah scope? Karena mereka menilai nilai kerja berdasarkan waktu mereka menghabiskan. Jadi, kalau kamu tidak set batas revisi di kontrak, siap-siap jadi ‘free‑lancer’ mereka.",
-    "pillar": "freelance",
-    "format": "discussion",
-    "style": "observasi",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 13,
-    "telegram_notified_at": "2026-10-06T04:48:23+00:00"
-  },
-  {
     "id": 4,
     "text": "Opini: Jika kamu masih mengukur progres freelance dengan jumlah jam kerja, kamu salah arah. Fokuslah pada nilai yang dihasilkan untuk klien, bukan berapa lama kamu menatap layar. Nilai = uang, jam = burnout.",
     "pillar": "mindset",
@@ -49,81 +13,6 @@
     "approved_at": "2026-10-06T05:28:27+00:00",
     "posted_at": "2026-10-06T05:28:41+00:00",
     "threads_post_id": "17921966808226269"
-  },
-  {
-    "id": 5,
-    "text": "Specific lesson: Saat melamar remote job, ubah CV jadi ‘project portfolio’. Cantumkan hasil konkret, bukan hanya deskripsi tugas. Recruiter remote menilai output, bukan lama pengalaman.",
-    "pillar": "remote_job",
-    "format": "specific_lesson",
-    "style": "hot_take",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 15,
-    "telegram_notified_at": "2026-10-06T04:48:27+00:00"
-  },
-  {
-    "id": 6,
-    "text": "Microstock: upload foto di 5 platform vs fokus di 2 yang paling relevan. Lebih banyak platform memberi exposure, tapi menguras waktu edit metadata. Fokus pada 2 platform niche dapat meningkatkan royalty per foto karena kualitas dan relevansi yang lebih tinggi.",
-    "pillar": "microstock",
-    "format": "comparison",
-    "style": "observasi",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 16,
-    "telegram_notified_at": "2026-10-06T04:48:28+00:00"
-  },
-  {
-    "id": 7,
-    "text": "Strong opinion: Menolak kerja “boleh kerja dari mana saja” kalau klien belum siap dengan asinkron komunikasi. Tanpa ekspektasi respon jelas, remote work berubah jadi stress marathon, bukan freedom.",
-    "pillar": "freelance",
-    "format": "strong_opinion",
-    "style": "diskusi",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 17,
-    "telegram_notified_at": "2026-10-06T04:48:30+00:00"
-  },
-  {
-    "id": 8,
-    "text": "Affiliate itu bukan “pasang link, duduk manis, duit masuk”. Kebanyakan orang pikir cuma klik‑klik aja, padahal kamu harus terus produksi konten yang relevan, optimasi SEO, dan support audience. Tanpa itu, link itu cuma hiasan di bio. Jadi jangan harap passive income tanpa kerja berulang‑ulang.",
-    "pillar": "peluang_lain",
-    "format": "myth_vs_reality",
-    "style": "observasi",
-    "status": "posted",
-    "attempts": 0,
-    "created_at": "2026-10-06T04:48:14+00:00",
-    "telegram_message_id": 18,
-    "telegram_notified_at": "2026-10-06T04:48:32+00:00",
-    "approved_at": "2026-10-06T05:26:44+00:00",
-    "posted_at": "2026-10-06T08:34:45+00:00",
-    "threads_post_id": "17936282808251487"
-  },
-  {
-    "id": 9,
-    "text": "Aku lagi mikir, mau coba jual template desain di marketplace kecil, tapi takut gak ada pembeli. Ada yang pernah pakai model royalty‑free vs lisensi eksklusif? Mana yang lebih realistis buat pendapatan bulanan, dan berapa lama biasanya sampai break‑even?",
-    "pillar": "peluang_lain",
-    "format": "help_seeking",
-    "style": "minta_pencerahan",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T06:44:04+00:00",
-    "telegram_message_id": 19,
-    "telegram_notified_at": "2026-10-06T06:44:10+00:00"
-  },
-  {
-    "id": 10,
-    "text": "Sadar gak, saat kamu terus menambah skill tanpa menguji nilai pasar, kamu cuma mengumpulkan CV yang tebal.\n\nCoba deh, pilih satu skill, buat satu output nyata, ukur reaksi klien.\n\nKalau hasilnya positif, baru pertimbangkan skill berikutnya.\n\nBagaimana cara kalian menilai kapan skill baru cukup ‘siap jual’?",
-    "pillar": "mindset",
-    "format": "specific_lesson",
-    "style": "diskusi",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T06:44:04+00:00",
-    "telegram_message_id": 20,
-    "telegram_notified_at": "2026-10-06T06:44:12+00:00"
   },
   {
     "id": 11,
@@ -196,17 +85,5 @@
     "created_at": "2026-10-06T06:44:04+00:00",
     "telegram_message_id": 26,
     "telegram_notified_at": "2026-10-06T06:44:22+00:00"
-  },
-  {
-    "id": 17,
-    "text": "Bayangin kamu baru beli domain murah, bikin satu landing page jual template desain. Hanya 2 jam kerja, tapi tiap hari ada yang download gratis karena kamu belum pasang paywall. Kamu mikir: \"Kalau gratis, kenapa orang beli?\" Tapi faktanya, sebagian besar pembeli datang lewat rekomendasi dari yang dulu cuma ngambil gratis. Jadi, jangan takut pakai model freemium dulu—itu cara paling cepat ukur minat pasar sebelum kamu mulai charge.",
-    "pillar": "peluang_lain",
-    "format": "mini_story",
-    "style": "hot_take",
-    "status": "pending",
-    "attempts": 0,
-    "created_at": "2026-10-06T07:17:40+00:00",
-    "telegram_message_id": 27,
-    "telegram_notified_at": "2026-10-06T07:17:46+00:00"
   }
 ]
