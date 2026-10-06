@@ -4,6 +4,7 @@ on:
   schedule:
     # 08:00 WIB setiap hari. GitHub cron memakai UTC.
     - cron: "0 1 * * *"
+    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
 
 permissions:
