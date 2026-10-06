@@ -26,7 +26,7 @@ Telegram
 Threads API
 ```
 
-Telegram dipoll setiap 5 menit oleh GitHub Actions. Jadi approval dari HP tidak membutuhkan dashboard baru. Inline keyboard digunakan untuk action utama; slash command `/approve ID` dan `/reject ID` tetap tersedia sebagai fallback. Telegram memang mendukung callback query untuk inline buttons, dan `getUpdates` dapat dipakai untuk long polling. citeturn0search8turn0search2
+Approval diproses oleh GitHub Actions tepat sebelum tiap jadwal posting (bukan polling terus-menerus), sehingga hemat kuota menit GitHub Actions gratis. Approval dari HP tidak membutuhkan dashboard baru. Inline keyboard digunakan untuk action utama; slash command `/approve ID` dan `/reject ID` tetap tersedia sebagai fallback. Telegram memang mendukung callback query untuk inline buttons, dan `getUpdates` dapat dipakai untuk long polling. citeturn0search8turn0search2
 
 ## 1. Setup satu kali
 
@@ -56,10 +56,12 @@ Setiap draft baru dibuat dengan:
 "status": "pending"
 ```
 
-Workflow `telegram-approval.yml` berjalan setiap 5 menit dan melakukan dua hal:
+Script `src/telegram_approval.py` dijalankan di dua tempat:
 
-1. mengambil callback/button yang masuk dari Telegram;
-2. mencari draft `pending` yang belum pernah dinotifikasi lalu mengirimkannya ke Telegram.
+1. **`generate.yml`** (setelah generate): mengirim draft `pending` yang belum pernah dinotifikasi ke Telegram.
+2. **`post.yml`** (sebelum posting): mengambil tombol Approve/Reject yang kamu tekan sejak run terakhir, lalu langsung memposting item `approved` berikutnya.
+
+Artinya, approve **sebelum jam posting** (misalnya sebelum 09:00 WIB untuk post jam 09:00). Approval yang masuk setelahnya diproses di jadwal posting berikutnya. Kalau Telegram sedang bermasalah, langkah ini tidak menghentikan posting draft yang sudah `approved`.
 
 Pesan Telegram berbentuk:
 
@@ -100,13 +102,15 @@ Workflow posting hanya mengambil status `approved`, sehingga draft yang belum di
 GitHub Actions memakai UTC. Jadwal V2 dikonversi ke WIB (UTC+7):
 
 - Generate: **08:00 WIB setiap hari**
-- Telegram approval poll: **setiap 5 menit**
+- Approval Telegram diproses sebelum tiap run posting (lihat bagian 2)
 - Post: **09:00 WIB**
 - Post: **13:00 WIB**
 - Post: **17:00 WIB**
 - Post: **21:00 WIB**
 
 GitHub cron tidak menjamin presisi sampai detik dan dapat mengalami delay.
+
+**Catatan kuota:** repo privat di akun GitHub Free mendapat 2.000 menit Actions per bulan dan tiap job dibulatkan ke atas ke menit penuh. Dengan jadwal ini pemakaian sekitar 150-200 menit per bulan. Jangan menambah cron yang berjalan sangat sering (misalnya tiap 5 menit) di repo privat.
 
 ## 4. Content Engine V2 (Groq)
 
@@ -172,6 +176,9 @@ Beberapa contoh yang kamu kirim memang masih punya masalah:
 Jadi saya tidak hanya menaikkan `temperature` atau `boldness`. Problem utamanya ada pada **instruction hierarchy + format priors + quality gate**, bukan kecepatan API.
 
 ## 7. Mengatur karakter akun
+
+`style_weights` menentukan seberapa sering tiap style dipakai (dipilih acak berbobot). Semua nilai di `voice` (boldness, directness, opinionated, playfulness, sarcasm, specificity) dikirim ke prompt.
+
 
 Mayoritas tuning dilakukan di `config.json`.
 

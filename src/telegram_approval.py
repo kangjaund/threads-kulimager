@@ -8,6 +8,7 @@ import html
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -231,9 +232,9 @@ def process_updates(token, chat_id, posts):
             if process_action(token, chat_id, posts, action, parts[1], message):
                 changed = True
 
-    if highest != offset:
-        save_offset(highest)
-    return changed
+    # Offset TIDAK disimpan di sini. main() menyimpannya setelah posts.json aman,
+    # supaya approval yang sudah diproses tidak hilang jika langkah berikutnya gagal.
+    return changed, highest
 
 
 def notify_pending(token, chat_id, posts):
@@ -244,8 +245,10 @@ def notify_pending(token, chat_id, posts):
         message_id = send_draft(token, chat_id, post)
         post["telegram_message_id"] = message_id
         post["telegram_notified_at"] = now_iso()
+        save_posts(posts)  # simpan per draft agar tidak terkirim ganda jika run berikutnya gagal
         changed = True
         print(f"Telegram: mengirim draft #{post['id']} (message {message_id}).")
+        time.sleep(1.2)  # batas Telegram: ~1 pesan/detik ke chat yang sama
     return changed
 
 
@@ -254,10 +257,14 @@ def main():
     chat_id = require_env("TELEGRAM_CHAT_ID")
     posts = load_posts()
 
-    changed = process_updates(token, chat_id, posts)
-    changed = notify_pending(token, chat_id, posts) or changed
+    offset_before = get_offset()
+    changed, highest = process_updates(token, chat_id, posts)
     if changed:
-        save_posts(posts)
+        save_posts(posts)  # 1) simpan approval/reject dulu
+    if highest != offset_before:
+        save_offset(highest)  # 2) offset maju hanya setelah state tersimpan
+
+    notify_pending(token, chat_id, posts)  # 3) kirim draft baru (menyimpan per draft)
 
     pending = sum(1 for p in posts if p.get("status") == "pending")
     approved = sum(1 for p in posts if p.get("status") == "approved")

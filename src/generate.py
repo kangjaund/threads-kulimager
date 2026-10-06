@@ -22,9 +22,9 @@ BANNED_GENERIC_STARTS = (
 
 
 def pick_style(cfg):
-    weights = {k: v for k, v in cfg["style_weights"].items() if v > 0}
+    weights = {k: v for k, v in cfg["style_weights"].items() if v > 0 and k in cfg["styles"]}
     if not weights:
-        sys.exit("ERROR: style_weights kosong atau semuanya 0.")
+        sys.exit("ERROR: style_weights kosong, semuanya 0, atau tidak cocok dengan 'styles'.")
     return random.choices(list(weights), weights=list(weights.values()))[0]
 
 
@@ -38,16 +38,14 @@ def build_assignments(cfg, recent, n):
     pillars, formats = list(cfg["pillars"]), list(cfg["formats"])
     pillar_hist = [p.get("pillar") for p in recent]
     format_hist = [p.get("format") for p in recent]
-    style_hist = [p.get("style") for p in recent]
     out = []
     for _ in range(n):
         pillar = least_used(pillars, pillar_hist)
         fmt = least_used(formats, format_hist)
-        style = least_used(list(cfg["styles"]), style_hist)
-        out.append({"pillar": pillar, "format": fmt, "style": style})
+        # Style dipilih berdasarkan bobot style_weights di config.json.
+        out.append({"pillar": pillar, "format": fmt, "style": pick_style(cfg)})
         pillar_hist.append(pillar)
         format_hist.append(fmt)
-        style_hist.append(style)
     return out
 
 
@@ -66,7 +64,7 @@ def build_prompt(cfg, assignments, avoid_texts):
         "IDENTITAS SUARA:",
         "Akun ini bukan guru cari uang, bukan motivator, dan bukan akun corporate.",
         "Posisinya adalah freelancer yang tech-curious, observatif, skeptis terhadap hype, dan berani punya opini.",
-        f"Boldness={v['boldness']}, directness={v['directness']}, opinionated={v['opinionated']}, specificity={v['specificity']}.",
+        "Skala voice (0 = sangat rendah, 1 = sangat tinggi): " + ", ".join(f"{k}={val}" for k, val in v.items()) + ".",
         "",
         "WRITING DNA:",
         *[f"- {x}" for x in cfg["writing_dna"]],
@@ -203,7 +201,7 @@ def quality_check(text, pool, max_chars):
         reasons.append("length")
     if any(low.startswith(x) for x in BANNED_GENERIC_STARTS):
         reasons.append("generic-opening")
-    if low.count("! ") + low.count("!") > 2:
+    if clean.count("!") > 2:
         reasons.append("too-many-exclamations")
     if clean.count("?") > 2:
         reasons.append("too-many-questions")
