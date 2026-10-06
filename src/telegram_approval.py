@@ -13,7 +13,7 @@ from pathlib import Path
 
 import requests
 
-from common import load_posts, now_iso, require_env, save_posts
+from common import approval_settings, load_config, load_posts, now_iso, require_env, save_posts
 
 ROOT = Path(__file__).resolve().parent.parent
 OFFSET_PATH = ROOT / "data" / "telegram_offset.json"
@@ -112,6 +112,12 @@ def format_draft(post):
         f"Pillar: {post.get('pillar', '-')}\n"
         f"Format: {post.get('format', '-')}"
     )
+    mode, window = approval_settings(load_config())
+    if mode == "veto":
+        body += (
+            f"\n\n⏱ Diposting otomatis di slot berikutnya (minimal {window} menit setelah pesan ini) "
+            f"kecuali kamu tekan Reject."
+        )
     if len(body) > MAX_TEXT:
         body = body[: MAX_TEXT - 30] + "\n\n[truncated]"
     return body

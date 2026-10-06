@@ -64,3 +64,22 @@ def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
                 retry_after = None
             time.sleep(max(backoff * attempt, retry_after or 0))
     raise RuntimeError(f"Request gagal setelah {retries} percobaan ({last}).")
+
+
+# --- Mode approval -----------------------------------------------------------
+# Default ada di kode supaya config.json tidak perlu diubah. Opsional di config.json:
+#   "approval_mode": "veto" | "manual"   (default "veto")
+#   "veto_window_minutes": 30            (default 30)
+DEFAULT_APPROVAL_MODE = "veto"
+DEFAULT_VETO_WINDOW_MINUTES = 30
+
+
+def approval_settings(cfg):
+    mode = str(cfg.get("approval_mode", DEFAULT_APPROVAL_MODE)).lower()
+    if mode not in ("veto", "manual"):
+        mode = DEFAULT_APPROVAL_MODE
+    try:
+        window = int(cfg.get("veto_window_minutes", DEFAULT_VETO_WINDOW_MINUTES))
+    except (TypeError, ValueError):
+        window = DEFAULT_VETO_WINDOW_MINUTES
+    return mode, max(0, window)
