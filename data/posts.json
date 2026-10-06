@@ -157,5 +157,41 @@
     "created_at": "2026-10-06T11:47:42+00:00",
     "telegram_message_id": 33,
     "telegram_notified_at": "2026-10-06T11:47:56+00:00"
+  },
+  {
+    "id": 23,
+    "text": "Tarif per proyek itu bukan “premium”, itu survival. Kalau kamu masih ngasih harga per jam, klien bakal terus menawar waktu yang dibutuhkan. Ganti ke paket fixed‑price, tentukan deliverable, dan hitung margin dulu. Kalau margin tipis, naikkan scope atau harga, bukan jam kerja. Simpel, tapi kebanyakan masih ngikutin kebiasaan agency.",
+    "pillar": "freelance",
+    "format": "specific_lesson",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T12:15:38+00:00",
+    "telegram_message_id": 34,
+    "telegram_notified_at": "2026-10-06T12:15:44+00:00"
+  },
+  {
+    "id": 24,
+    "text": "Setiap hari tim remote saya pakai Slack 24/7, tapi jam kerja inti cuma 2 jam di pagi. Aku masih bingung: harus tetap aktif di channel tiap menit supaya terlihat “engaged”, atau cukup fokus pada jam inti dan biarin notifikasi lewat? Ada yang pernah temukan sweet spot antara ekspektasi kecepatan respon dan menjaga produktivitas pribadi?",
+    "pillar": "remote_job",
+    "format": "help_seeking",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T12:15:38+00:00",
+    "telegram_message_id": 35,
+    "telegram_notified_at": "2026-10-06T12:15:45+00:00"
+  },
+  {
+    "id": 25,
+    "text": "Keyword ‘sunset’ itu udah basi. Memasukkan 10 tag aman malah bikin foto kamu tenggelam di lautan konten serupa. Lebih baik pilih 2‑3 kata kunci niche yang memang dicari, walau volume lebih kecil. Algoritma reward relevansi, bukan volume semu. Jadi jangan buang waktu editing metadata yang nggak akan meningkatkan penjualan.",
+    "pillar": "microstock",
+    "format": "strong_opinion",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-06T12:15:38+00:00",
+    "telegram_message_id": 36,
+    "telegram_notified_at": "2026-10-06T12:15:47+00:00"
   }
 ]
