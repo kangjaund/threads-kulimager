@@ -1,4 +1,7 @@
-"""Kumpulkan sinyal research AI (RSS/Atom, halaman indeks lab, Google News, Threads, X)
+"""[V3] Bila research.source_mode = "threads_only", collect() hanya memakai Threads keyword search
+(RSS, HTML index, Google News, dan X dilewati; kodenya tetap ada untuk mode "articles").
+
+Kumpulkan sinyal research AI (RSS/Atom, halaman indeks lab, Google News, Threads, X)
 dan susun "Research Packet" untuk generator.
 
 Alur:
@@ -266,24 +269,25 @@ def collect(cfg):
         print("Research dinonaktifkan di config (research.enabled = false).")
         return []
     items, errors = [], []
+    threads_only = st["source_mode"] == "threads_only"
 
-    for feed in st["rss_feeds"]:
+    for feed in ([] if threads_only else st["rss_feeds"]):
         try:
             items += parse_feed(fetch_response(feed["url"]).content, feed["name"],
                                 feed.get("category", "rss_discovery"), int(st["items_per_feed"]))
         except Exception as exc:
             errors.append(f"RSS {feed.get('name')}: {type(exc).__name__}")
-    for src in st["html_index"]:
+    for src in ([] if threads_only else st["html_index"]):
         try:
             items += html_index_items(src)
         except Exception as exc:
             errors.append(f"Index {src.get('name')}: {type(exc).__name__}")
-    for query in st["google_news_queries"]:
+    for query in ([] if threads_only else st["google_news_queries"]):
         try:
             items += google_news_items(query, int(st["items_per_query"]))
         except Exception as exc:
             errors.append(f"Google News {query}: {type(exc).__name__}")
-    for name, fn in (("X", fetch_x), ("Threads", fetch_threads)):
+    for name, fn in ((("Threads", fetch_threads),) if threads_only else (("X", fetch_x), ("Threads", fetch_threads))):
         try:
             items += fn(st)
         except Exception as exc:
@@ -297,6 +301,16 @@ def collect(cfg):
             uniq.append(it)
     max_age = st["max_source_age_days"]
     uniq = [it for it in uniq if it["type"] != "article" or item_age_days(it) <= max_age]
+    if threads_only:  # filter recency + dedupe teks identik (repost / spam kloning)
+        uniq = [it for it in uniq if item_age_days(it) <= st["threads_max_age_days"]]
+        seen_text, deduped = set(), []
+        for it in uniq:
+            key = re.sub(r"\W+", " ", (it.get("summary") or "").lower()).strip()[:160]
+            if key in seen_text:
+                continue
+            seen_text.add(key)
+            deduped.append(it)
+        uniq = deduped
     articles = sorted((i for i in uniq if i["type"] == "article" and len(i.get("content", "")) < 1500),
                       key=lambda i: (priority_rank(i, st), item_age_days(i)))
     for it in articles[: int(st["article_enrich_items"])]:

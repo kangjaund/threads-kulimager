@@ -1,7 +1,10 @@
 """Generate Threads-first content with Groq, quality-gate it, and queue it.
 
-Mode research (default bila research.enabled): Research Packet -> draft -> quality gate ->
-verifikasi fakta terhadap sumber -> antrean. Mode evergreen dipakai bila research dimatikan.
+Mode (dipilih otomatis dari config):
+- threads_only (V3, research.source_mode = "threads_only"): Threads keyword search -> scoring ->
+  clustering -> angle extraction -> writer -> quality gate V3 -> antrean. Tanpa berita/RSS.
+- articles (V2): Research Packet -> draft -> quality gate -> verifikasi fakta -> antrean.
+- evergreen: dipakai bila research dimatikan.
 """
 import json
 import random
@@ -12,6 +15,8 @@ from collections import Counter, deque
 from difflib import SequenceMatcher
 
 from common import load_config, load_posts, now_iso, request_with_retry, require_env, save_posts
+from conversation import (ANGLES, build_angle_prompt, build_conversation_packet, select_clusters,
+                          source_text_of)
 from research import build_packet, load_research, save_marks, select_batch
 from textfmt import (BLOCK_KEYS, assemble_blocks, check_format, reflow, split_into_parts, strict_rules,
                      thread_settings)
@@ -51,6 +56,20 @@ RESEARCH_SCHEMA = {
         "required": ["source_id", "skip", "skip_reason", "pillar", *BLOCK_KEYS, *THREAD_KEYS],
         "additionalProperties": False}}},
     "required": ["posts"], "additionalProperties": False,
+}
+ANGLE_SCHEMA = {
+    "type": "object",
+    "properties": {"clusters": {"type": "array", "items": {
+        "type": "object",
+        "properties": {"id": {"type": "string"}, "skip": {"type": "boolean"}, "skip_reason": {"type": "string"},
+                       "conversation": {"type": "string"}, "tension": {"type": "string"},
+                       "assumption": {"type": "string"}, "underdiscussed": {"type": "string"},
+                       "angle": {"type": "string", "enum": list(ANGLES)}, "angle_note": {"type": "string"},
+                       "pillar": {"type": "string"}},
+        "required": ["id", "skip", "skip_reason", "conversation", "tension", "assumption", "underdiscussed",
+                     "angle", "angle_note", "pillar"],
+        "additionalProperties": False}}},
+    "required": ["clusters"], "additionalProperties": False,
 }
 VERIFY_SCHEMA = {
     "type": "object",
@@ -349,7 +368,8 @@ def count_sentences(block):
     return len([s for s in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"“'(])", block.strip()) if s.strip()])
 
 
-def quality_check(text, pool, cfg, source_text=None, root=True, min_chars=None):
+def quality_check(text, pool, cfg, source_text=None, root=True, min_chars=None, v3=False, post_type=None,
+                  recent=()):
     """Gate deterministik: tolak slop AI, pelanggaran format, dan salinan sumber."""
     reasons = []
     max_chars = cfg["max_chars"]
@@ -388,14 +408,18 @@ def quality_check(text, pool, cfg, source_text=None, root=True, min_chars=None):
     if low.count("padahal") >= 2 or low.count("realitanya") >= 2:
         reasons.append("repeated-transition")
 
+    if v3:
+        reasons += v3_reasons(clean, text, cfg, post_type, recent, root)
+
     # Format paragraf: ditegakkan lewat textfmt (teks diasumsikan sudah di-reflow)
     reasons += check_format(text, strict_rules(cfg), root=root)
 
     # Jangan menyalin kalimat sumber
     if source_text:
         src_words, post_words = _words(source_text), _words(text)
-        grams = {tuple(src_words[i:i + COPY_NGRAM]) for i in range(len(src_words) - COPY_NGRAM + 1)}
-        if any(tuple(post_words[i:i + COPY_NGRAM]) in grams for i in range(len(post_words) - COPY_NGRAM + 1)):
+        gram = V3_COPY_NGRAM if v3 else COPY_NGRAM
+        grams = {tuple(src_words[i:i + gram]) for i in range(len(src_words) - gram + 1)}
+        if any(tuple(post_words[i:i + gram]) in grams for i in range(len(post_words) - gram + 1)):
             reasons.append("copies-source")
     return (not reasons), reasons
 
@@ -415,13 +439,14 @@ def build_parts(entry, cfg):
     return parts[: th["max_parts"]]
 
 
-def check_parts(parts, pool, cfg, source_text=None):
+def check_parts(parts, pool, cfg, source_text=None, v3=False, post_type=None, recent=()):
     """Gate untuk semua bagian utas. Return (ok, alasan)."""
     reasons = []
     for idx, part in enumerate(parts):
         # Bagian 1 dari sebuah utas boleh lebih pendek (hook), tetapi tetap harus utuh jika dibaca sendiri.
         ok, why = quality_check(part, pool if idx == 0 else [], cfg, source_text, root=(idx == 0),
-                                min_chars=60 if (idx == 0 and len(parts) > 1) else None)
+                                min_chars=60 if (idx == 0 and len(parts) > 1) else None,
+                                v3=v3, post_type=post_type, recent=recent)
         reasons += [(f"bagian{idx + 1}:" if len(parts) > 1 else "") + r for r in why]
     return (not reasons), reasons
 
@@ -555,6 +580,269 @@ def run_research(cfg, recent, avoid_texts, need):
     return accepted, marks, failures
 
 
+# ----------------------------------------------------------------------------- V3: quality gate
+V3_COPY_NGRAM = 7
+V3_QUALITY = {
+    "newsiness": ["baru saja meluncurkan", "baru meluncurkan", "resmi meluncurkan", "menurut laporan",
+                  "menurut survei", "berdasarkan penelitian", "berdasarkan riset", "dalam perkembangan terbaru",
+                  "mengumumkan", "dilaporkan", "siaran pers", "rilis resmi"],
+    "article_structure": ["kesimpulan:", "pelajaran:", "berikut adalah", "berikut ini", "intinya", "pelajarannya",
+                          "yang perlu kamu pahami", "tips:", "langkah pertama"],
+    "bait_hard": ["share kalau", "share jika", "follow untuk", "follow aku", "follow gue", "like kalau",
+                  "repost kalau", "komentar di bawah", "kolom komentar", "tag teman", "tag temanmu", "yuk diskusi"],
+    "bait_soft": ["setuju nggak", "setuju gak", "setuju ga", "setuju?", "menurut kamu", "menurutmu",
+                  "apa pendapat kalian", "gimana menurut", "kalian setuju"],
+    "bait_soft_allowed_types": ["discussion", "help_seeking"],
+    "slang_watch": ["gue", "bro", "anjir", "wkwk", "ternyata"],
+    "slang_max_in_recent": 4,
+}
+_FIRST = r"(?:saya|aku|gue|gw|gua)"
+FAKE_FIRST_PERSON = [
+    rf"\b{_FIRST}\s+(?:sudah |udah |pernah |sempat |baru |lagi |sering |lumayan |kemarin |tadi )*"
+    r"(?:mencoba|nyoba|nyobain|mencobanya|coba|pakai|pake|memakai|menggunakan|ngetes|menguji|membuat|bikin|"
+    r"merasakan|ngerasain|mengalami|ngalamin|berhasil|dapat|dapet)\b",
+    rf"\bpengalaman\s+(?:pribadi\s+)?{_FIRST}\b", r"\bpengalamanku\b",
+    rf"\b(?:klien|client|teman|temen|kakak|bos|atasan|kolega|rekan)\s+{_FIRST}\b",
+    rf"\b(?:di\s+)?(?:kantor|kerjaan|tim)\s+{_FIRST}\b",
+]
+_FIRST_RES = [re.compile(x, re.IGNORECASE) for x in FAKE_FIRST_PERSON]
+_NUMBER_RE = re.compile(r"\d[\d.,]*\s*(?:%|persen|juta|miliar|milyar|triliun|ribu\s+(?:dolar|user|pengguna))", re.IGNORECASE)
+_NUMBERED_LINE = re.compile(r"(?m)^\s*(?:\d+\s*[.)]|[-•*]\s)")
+
+
+def v3_quality_settings(cfg):
+    out = dict(V3_QUALITY)
+    out.update((cfg.get("v3") or {}).get("quality", {}))
+    return out
+
+
+def v3_reasons(clean, raw, cfg, post_type, recent, root=True):
+    """Gate tambahan mode percakapan. `clean` = teks satu baris (lowercase di bawah)."""
+    q, low, reasons = v3_quality_settings(cfg), clean.lower(), []
+    if any(x in low for x in q["newsiness"]):
+        reasons.append("newsy")
+    if any(x in low for x in q["article_structure"]) or re.search(r"\b\d+\s+hal\s+(?:yang|penting)", low):
+        reasons.append("article-structure")
+    if len(_NUMBERED_LINE.findall(raw)) >= (2 if root else 3):
+        reasons.append("list-structure")
+    if any(x in low for x in q["bait_hard"]):
+        reasons.append("engagement-bait")
+    elif post_type not in q["bait_soft_allowed_types"] and any(x in low for x in q["bait_soft"]):
+        reasons.append("engagement-bait")
+    if any(rx.search(low) for rx in _FIRST_RES):
+        reasons.append("fake-first-person")
+    if _NUMBER_RE.search(low):
+        reasons.append("unsourced-stat")
+    for word in q["slang_watch"]:
+        rx = re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE)
+        if rx.search(low) and sum(1 for t in list(recent)[-10:] if rx.search(t)) >= int(q["slang_max_in_recent"]):
+            reasons.append(f"slang-overuse:{word}")
+    return reasons
+
+
+# ----------------------------------------------------------------------------- V3: config view & post type
+ANGLE_POST_TYPES = {
+    "agree": ["strong_opinion", "observation", "relatable_tech_behavior"],
+    "disagree": ["contrarian", "strong_opinion"],
+    "nuance": ["observation", "discussion", "unexpected_implication", "strong_opinion"],
+    "unexpected_implication": ["unexpected_implication", "observation", "strong_opinion"],
+    "relatable_observation": ["relatable_tech_behavior", "observation"],
+    "absurdity": ["observation", "relatable_tech_behavior", "contrarian"],
+    "practical_consequence": ["unexpected_implication", "observation", "strong_opinion"],
+    "question": ["help_seeking", "discussion"],
+}
+SYSTEM_ANALYST = "Kamu analis percakapan media sosial. Keluarkan hanya JSON sesuai schema."
+
+
+def v3_view(cfg):
+    """Salinan config dengan pilar/writing DNA/rules V3 (bagian cfg['v3']) menimpa versi artikel."""
+    v3, view = cfg.get("v3") or {}, dict(cfg)
+    for key in ("pillars", "writing_dna", "rules"):
+        if v3.get(key):
+            view[key] = v3[key]
+    if v3.get("hook_rules"):
+        view["hook_engine"] = {**cfg["hook_engine"], "rules": v3["hook_rules"]}
+    if v3.get("banned_additions"):
+        view["banned_patterns"] = list(cfg.get("banned_patterns", [])) + list(v3["banned_additions"])
+    return view
+
+
+def pick_post_type(cfg, angle, history):
+    v3 = cfg.get("v3") or {}
+    types, weights = v3.get("post_types", {}), v3.get("post_type_weights", {})
+    base = {k: w for k, w in weights.items() if w > 0 and k in types}
+    if not base:
+        sys.exit("ERROR: v3.post_type_weights kosong atau tidak cocok dengan v3.post_types.")
+    allowed = (v3.get("angle_post_types") or ANGLE_POST_TYPES).get(angle) or []
+    cand = {k: w for k, w in base.items() if k in allowed} or base
+    counts = Counter(h for h in history[-12:] if h)
+    adj = {k: w / (1 + counts.get(k, 0)) for k, w in cand.items()}
+    return random.choices(list(adj), weights=list(adj.values()))[0]
+
+
+def static_threads_prompt(view):
+    lines = static_base_lines(view)
+    lines += [
+        "", "TUGAS (MODE PERCAKAPAN THREADS — BUKAN BERITA):",
+        "Untuk setiap [C*] di BAHAN PERCAKAPAN (sesuai urutan penugasan), tulis SATU post Threads orisinal dari angle "
+        "yang sudah dipilih, atau skip (skip=true, semua block kosong, skip_reason singkat) bila tidak ada yang layak dikatakan.",
+        "- Jangan meringkas percakapan. Mulai dari hal yang menarik/menegangkan, bukan dari topiknya.",
+        "- Akun ini ikut dalam percakapan, bukan melaporkan berita. Jangan menyebut perusahaan 'mengumumkan' atau 'meluncurkan'.",
+        "- Jangan mengaku pernah mencoba/memakai/mengalami sesuatu. Jangan membuat cerita, eksperimen, klien, atau teman fiktif.",
+        "- Jangan membuat angka/statistik/kutipan. Opini boleh, tetapi jelas sebagai opini/observasi.",
+        "- Jangan mengakhiri dengan pertanyaan atau CTA kecuali post_type memang discussion/help_seeking.",
+        "- Jangan memaksakan slang (gue, bro, anjir, wkwk, ternyata). Bahasa yang datar dan natural lebih baik.",
+        "- Jangan menyalin kalimat/gaya khas dari contoh obrolan. Tulis dari nol.",
+        "- Pilih 'pillar' dari PANDUAN PILAR.",
+    ]
+    lines += SELF_EDIT
+    lines += ["", 'Keluarkan HANYA JSON {"posts":[{"source_id","skip","skip_reason","pillar","block_1","block_2","block_3","block_4","block_5","thread_2","thread_3","thread_4"}]} '
+              "dalam urutan yang sama dengan penugasan. source_id = id [C*].", "", "=== DATA UNTUK PANGGILAN INI ==="]
+    return "\n".join(lines)
+
+
+def build_threads_prompt(cfg, view, assignments, packet, recent_texts):
+    static = static_threads_prompt(view)
+    v3 = cfg.get("v3") or {}
+    used = sorted({a["format"] for _, a in assignments})
+    var = ["PANDUAN POST TYPE (yang dipakai kali ini):", *[f"- {t}: {v3['post_types'][t]}" for t in used]]
+    if recent_texts:
+        var += ["", "POSTINGAN TERBARU (jangan ulangi ide, angle, hook, atau struktur kalimatnya):"]
+        var += [f"- {t[:110].replace(chr(10), ' ')}" for t in recent_texts[-PROMPT_RECENT_POSTS:]]
+    var += ["", packet, "", "Penugasan:"]
+    for cid, a in assignments:
+        var.append(f"{cid}: post_type={a['format']} | angle={a['style']}")
+    return static + "\n" + "\n".join(var), len(static) + 1
+
+
+# ----------------------------------------------------------------------------- V3: mode threads_only
+def run_threads_only(cfg, recent, avoid_texts, need):
+    st, view = research_settings(cfg), v3_view(cfg)
+    v3 = cfg.get("v3") or {}
+    keywords = v3.get("keywords") or None
+    items = load_research()
+    marks, accepted, failures = {}, [], 0
+    tries, analysis = Counter(), {}  # analysis: cluster_id -> hasil angle extraction
+    stamp, budget = now_iso(), llm_settings(cfg)["tpm_budget"]
+
+    def local_mark(ids, **fields):
+        for rid in ids:
+            marks.setdefault(rid, {}).update(fields)
+        for it in items:
+            if it["id"] in ids:
+                it.update(fields)
+
+    def ids_of(cl):
+        return [i["id"] for i in cl["items"]]
+
+    for round_no in range(1, MAX_ROUNDS_RESEARCH + 1):
+        remaining = need - len(accepted)
+        if remaining <= 0:
+            break
+        clusters = select_clusters(st, items, avoid_texts + [a["text"] for a in accepted],
+                                   min(int(st["conv_clusters_for_angles"]), remaining + 2), keywords)
+        if not clusters:
+            print("Tidak ada cluster percakapan Threads yang layak dan belum dipakai.")
+            break
+
+        # --- Tahap 1: angle extraction (hanya untuk cluster yang belum dianalisis)
+        fresh = [c for c in clusters if c["id"] not in analysis]
+        while fresh:
+            prompt, static_chars, cmap = build_angle_prompt(view, fresh, st)
+            if est_tokens(prompt) + est_tokens(SYSTEM_ANALYST) + 1500 <= budget or len(fresh) <= 1:
+                break
+            fresh = fresh[:-1]
+        if fresh:
+            try:
+                data = groq_chat(cfg, SYSTEM_ANALYST, prompt, "angle_extraction", ANGLE_SCHEMA,
+                                 max_tokens=2000, static_chars=static_chars)
+            except (RuntimeError, ValueError) as exc:
+                failures += 1
+                print(f"Putaran {round_no}: angle extraction gagal: {exc}")
+                continue
+            for entry in data.get("clusters", []):
+                cl = cmap.get(entry.get("id", ""))
+                if cl is None:
+                    continue
+                if entry.get("skip") or entry.get("angle") not in ANGLES:
+                    analysis[cl["id"]] = {"skip": True}
+                    local_mark(ids_of(cl), skipped_at=stamp,
+                               skip_reason=("tidak ada tension nyata: " + (entry.get("skip_reason") or ""))[:160])
+                    print(f"Skip cluster [{cl['label']}]: {(entry.get('skip_reason') or '')[:100]}")
+                else:
+                    analysis[cl["id"]] = entry
+        usable = [c for c in clusters if analysis.get(c["id"]) and not analysis[c["id"]].get("skip")]
+        if not usable:
+            continue
+
+        # --- Tahap 2: writer
+        usable = usable[: remaining + 1]
+        while True:
+            hist = [p.get("format") for p in recent + accepted]
+            assignments, mapping, analyses = [], {}, {}
+            for idx, cl in enumerate(usable, 1):
+                cid, an = f"C{idx}", analysis[cl["id"]]
+                ptype = pick_post_type(cfg, an["angle"], hist)
+                hist.append(ptype)
+                assignments.append((cid, {"format": ptype, "style": an["angle"]}))
+                mapping[cid], analyses[cid] = cl, an
+            packet = build_conversation_packet(assignments, mapping, analyses, st)
+            prompt, static_chars = build_threads_prompt(cfg, view, assignments, packet,
+                                                        avoid_texts + [a["text"] for a in accepted])
+            effective = est_tokens(prompt) + est_tokens(SYSTEM_WRITER) - cache_hint(SYSTEM_WRITER, prompt, static_chars)
+            if effective + OUTPUT_RESERVE <= budget or len(usable) <= 1:
+                break
+            usable = usable[:-1]
+        print(f"Putaran {round_no}: {len(usable)} cluster, ~{effective} token prompt (di luar cache).")
+        try:
+            data = groq_chat(cfg, SYSTEM_WRITER, prompt, "conversation_posts", RESEARCH_SCHEMA, static_chars=static_chars)
+        except (RuntimeError, ValueError) as exc:
+            failures += 1
+            print(f"Putaran {round_no} gagal: {exc}")
+            continue
+
+        assign_map, candidates = dict(assignments), []
+        for entry in data.get("posts", []):
+            cid = entry.get("source_id", "")
+            if cid not in assign_map or cid not in mapping:
+                continue
+            cl, an, a = mapping[cid], analyses[cid], assign_map[cid]
+            if entry.get("skip") or not assemble_blocks(entry):
+                local_mark(ids_of(cl), skipped_at=stamp, skip_reason=(entry.get("skip_reason") or "writer skip")[:160])
+                print(f"Skip cluster [{cl['label']}]: {entry.get('skip_reason', '')[:100]}")
+                continue
+            parts = build_parts(entry, cfg)
+            text = parts[0]
+            pool = avoid_texts + [x["text"] for x in accepted] + [c["text"] for c in candidates]
+            ok, reasons = check_parts(parts, pool, cfg, source_text_of(cl), v3=True, post_type=a["format"],
+                                      recent=pool)
+            if not ok:
+                tries[cl["id"]] += 1
+                print(f"Dibuang ({', '.join(reasons)}): {text[:80]!r}")
+                if tries[cl["id"]] >= 2:
+                    local_mark(ids_of(cl), skipped_at=stamp, skip_reason="gagal quality gate: " + ",".join(reasons)[:120])
+                continue
+            pillars = view["pillars"]
+            pillar = an.get("pillar") if an.get("pillar") in pillars else (entry.get("pillar") if entry.get("pillar") in pillars else next(iter(pillars)))
+            top = cl["items"][0]
+            candidates.append({
+                "text": text, "parts": parts, "pillar": pillar, **a,
+                "source": {"id": cl["id"], "name": "Threads", "title": f"percakapan: {cl['label']}"[:200],
+                           "url": top.get("url", ""), "published_at": top.get("published_at", "")},
+                "conversation": {"topic": cl["label"], "posts": len(cl["items"]), "authors": cl["authors"],
+                                 "score": cl["score"], "tension": (an.get("tension") or "")[:200],
+                                 "angle": an["angle"], "angle_note": (an.get("angle_note") or "")[:200],
+                                 "links": [i.get("url", "") for i in cl["items"][:3] if i.get("url")]},
+                "research_item_ids": ids_of(cl), "verified": False,
+            })
+        for cand in candidates:
+            if len(accepted) >= need:
+                break
+            accepted.append(cand)
+            local_mark(cand["research_item_ids"], used_at=stamp)
+    return accepted, marks, failures
+
+
 # ----------------------------------------------------------------------------- main
 def main():
     cfg = load_config()
@@ -567,9 +855,12 @@ def main():
     need = min(cfg["posts_per_generate"], cfg["queue_target"] - open_count)
     recent = [p for p in posts if p["status"] != "failed"][-cfg["history_window"]:]
     avoid_texts = [p["text"] for p in recent]
-    research_on = research_settings(cfg)["enabled"]
+    rs = research_settings(cfg)
+    research_on = rs["enabled"]
 
-    if research_on:
+    if research_on and rs["source_mode"] == "threads_only":
+        accepted, marks, failures = run_threads_only(cfg, recent, avoid_texts, need)
+    elif research_on:
         accepted, marks, failures = run_research(cfg, recent, avoid_texts, need)
     else:
         accepted, marks, failures = run_evergreen(cfg, recent, avoid_texts, need)
@@ -595,7 +886,10 @@ def main():
             post["verified"] = bool(item.get("verified"))
             if item.get("needs_review"):
                 post["needs_review"] = True
-            research_marks[item["research_item_id"]] = {"used_by_post": next_id}
+            for rid in item.get("research_item_ids") or [item["research_item_id"]]:
+                research_marks[rid] = {"used_by_post": next_id}
+        if item.get("conversation"):
+            post["conversation"] = item["conversation"]
         posts.append(post)
         next_id += 1
     save_posts(posts)

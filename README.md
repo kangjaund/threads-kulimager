@@ -28,6 +28,42 @@ Threads API
 
 Approval diproses oleh GitHub Actions tepat sebelum tiap jadwal posting (bukan polling terus-menerus), sehingga hemat kuota menit GitHub Actions gratis. Approval dari HP tidak membutuhkan dashboard baru. Inline keyboard digunakan untuk action utama; slash command `/approve ID` dan `/reject ID` tetap tersedia sebagai fallback. Telegram memang mendukung callback query untuk inline buttons, dan `getUpdates` dapat dipakai untuk long polling. citeturn0search8turn0search2
 
+
+## V3 — Threads-only Content Engine
+
+Sumber konten berubah dari **artikel tentang topik** menjadi **orang yang membicarakan topik**:
+
+```text
+Threads keyword search (grup query dirotasi A→E)
+   → dedupe + filter recency + filter spam
+   → conversation scoring (recency, conversation, relatability, tension, specificity, originality, topic_fit)
+   → clustering percakapan  (satu cluster = satu post, bukan satu sumber = satu post)
+   → angle extraction (LLM, pilih SATU angle; skip bila tidak ada tension nyata)
+   → writer (post type berbobot: observation/opinion/relatable/contrarian/…)
+   → quality gate V3 (newsy, struktur artikel, engagement bait, fake first person, statistik karangan, slang berlebihan)
+   → Telegram (mode veto/approve yang sudah ada)
+```
+
+Tanpa RSS, Google News, X, maupun artikel eksternal. Kode lama tetap ada: set `research.source_mode` ke `"articles"` untuk kembali ke V2
+(config V2 asli ada di `config.v2.json`).
+
+| File | Peran V3 |
+|---|---|
+| `src/threads_research.py` | Kolektor utama; rotasi grup query (state di `data/research_state.json`), simpan `has_replies`, `is_quote_post`, `rank` |
+| `src/conversation.py` | Scoring, clustering, pemilihan cluster, prompt angle extraction |
+| `src/research.py` | `collect()` hanya memanggil Threads bila `source_mode=threads_only` |
+| `src/generate.py` | `run_threads_only()`, `v3_reasons()` (gate), `pick_post_type()` |
+| `config.json` → `v3` | Pilar P1–P6, writing DNA, post types + bobot, angle, keyword universe |
+| `config.json` → `research.threads_query_groups` | Grup query A–E |
+
+Trigger manual grup tertentu: Actions → *Generate konten* → Run workflow → `query_group` (A/B/C/D/E).
+
+Uji offline (tanpa jaringan): `python -m unittest discover -s tests -v`.
+
+### Protokol uji A/B/C (spec §18)
+Generate 30 post per batch: **A** = `source_mode: articles`, **B** = threads_only dengan prompt lama (`v3` dihapus sementara),
+**C** = threads_only penuh. Blind-test; target: skor "I'd reply" naik dan skor "journalism" turun.
+
 ## 1. Setup satu kali
 
 1. Buat repo **private** di GitHub dan upload seluruh isi folder.

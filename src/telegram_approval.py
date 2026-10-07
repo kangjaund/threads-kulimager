@@ -119,7 +119,15 @@ def format_draft(post):
         f"Format: {post.get('format', '-')}"
     )
     src = post.get("source")
-    if src:
+    conv = post.get("conversation")
+    if conv:
+        body += (f"\n\n💬 Percakapan: {html.escape(str(conv.get('topic', '-')))} "
+                 f"({conv.get('posts', '?')} post / {conv.get('authors', '?')} akun)"
+                 f"\nAngle: {html.escape(str(conv.get('angle', '-')))} — {html.escape(str(conv.get('angle_note', ''))[:140])}"
+                 f"\nTension: {html.escape(str(conv.get('tension', ''))[:140])}")
+        if conv.get("links"):
+            body += "\n" + html.escape(conv["links"][0])
+    elif src:
         title = html.escape((src.get("title") or "")[:110])
         body += f"\n\n📰 Sumber: {html.escape(src.get('name', '-'))} — {title}\n{html.escape(src.get('url', ''))}"
         if post.get("needs_review"):

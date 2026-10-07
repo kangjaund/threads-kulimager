@@ -74,7 +74,18 @@ THREADS_QUERIES = [
     "ChatGPT",
     "vibe coding",
     "AI freelancer",
+    "worksheet",
 ]
+
+# V3 (source_mode = threads_only): grup query yang dirotasi per run. Satu run = satu grup
+# (maksimal threads_max_queries_per_run query). Urutan A -> B -> C -> D -> E -> A ...
+THREADS_QUERY_GROUPS = {
+    "A_ai_tech": ["AI", "vibe coding", "AI agents", "ChatGPT", "Claude"],
+    "B_work": ["freelance", "remote work", "career", "client", "side hustle", "AI trainer"],
+    "C_creator": ["creator", "personal branding", "content", "algorithm", "creator economy"],
+    "D_builder": ["SaaS", "n8n", "hermes agent", "automation", "indie hacker", "build in public", "web tools", "worksheet"],
+    "E_tension": ["hot take", "unpopular opinion", "overrated", "I disagree", "worth it"],
+}
 
 # X API opsional (butuh X_BEARER_TOKEN; free tier umumnya tidak cukup). Kosong = dilewati.
 X_QUERIES = []
@@ -92,6 +103,16 @@ DEFAULTS = {
     "threads_results_per_query": 8,
     "threads_search_type": "TOP",
     "x_max_results": 10,
+    # V3: pipeline percakapan Threads (conversation.py)
+    "threads_max_age_days": 14,        # buang post Threads yang lebih tua dari ini
+    "conv_prefer_recent_days": 5,
+    "conv_clusters_for_angles": 5,     # jumlah cluster yang dianalisis di tahap angle extraction
+    "conv_posts_per_cluster": 3,       # contoh post per cluster yang dikirim ke LLM
+    "conv_excerpt_chars": 260,
+    "conv_min_post_score": 0.28,
+    "conv_min_cluster_score": 0.34,
+    "conv_cluster_threshold": 0.24,    # kemiripan minimal agar dua post digabung ke satu cluster
+    "conv_max_posts_per_author": 1,    # per cluster, agar satu orang tidak mendominasi
     # Research Packet (dijaga kecil karena batas Groq free tier 8K token/menit)
     "packet_max_items": 4,
     "packet_excerpt_chars": 1100,
@@ -111,6 +132,11 @@ def research_settings(cfg):
     out["google_news_queries"] = rcfg.get("google_news_queries", GOOGLE_NEWS_QUERIES)
     out["threads_queries"] = rcfg.get("threads_queries", THREADS_QUERIES)
     out["x_queries"] = rcfg.get("x_queries", X_QUERIES)
+    out["threads_query_groups"] = rcfg.get("threads_query_groups", THREADS_QUERY_GROUPS)
+    mode = str(rcfg.get("source_mode", "articles")).lower()
+    if rcfg.get("threads_only"):
+        mode = "threads_only"
+    out["source_mode"] = mode if mode in ("articles", "threads_only") else "articles"
     out["source_priority"] = rcfg.get("source_priority", SOURCE_PRIORITY)
     fresh = rcfg.get("freshness", {})
     out["prefer_recent_days"] = int(fresh.get("prefer_recent_days", 7))

@@ -1,4 +1,8 @@
-"""Social signal dari Threads keyword search.
+"""Social signal / bahan mentah percakapan dari Threads keyword search.
+
+V3 (source_mode = threads_only): modul ini adalah kolektor riset UTAMA. Query dirotasi per run
+(grup A..E di research.threads_query_groups) dan state rotasi disimpan di data/research_state.json
+(ikut ter-commit oleh workflow lewat `git add -A data`).
 
 Catatan penting:
 - Butuh scope threads_keyword_search PADA TOKEN (token lama tidak otomatis memilikinya; generate ulang token).
@@ -7,16 +11,18 @@ Catatan penting:
   kondisi itu (semua hasil milik akun sendiri) dan menandainya di log.
 - Social signal hanya bahan observasi, bukan bukti fakta.
 """
+import json
 import os
 import re
 
-from common import request_with_retry
+from common import ROOT, request_with_retry
 
 KEYWORD_URL = "https://graph.threads.net/keyword_search"
 ME_URL = "https://graph.threads.net/v1.0/me"
 # Field yang tercantum di dokumentasi resmi keyword search.
 FIELDS = "id,text,media_type,permalink,timestamp,username,has_replies,is_quote_post,is_reply"
-USER_AGENT = "threads-autopilot/2.0 (+research bot)"
+USER_AGENT = "threads-autopilot/3.0 (+research bot)"
+STATE_PATH = ROOT / "data" / "research_state.json"
 
 
 def _clean(text, limit):
@@ -44,12 +50,51 @@ def _error_message(resp):
         return f"{resp.status_code}: {resp.text[:160]}"
 
 
+def _load_state():
+    try:
+        return json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_state(state):
+    try:
+        STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        print(f"State rotasi query tidak tersimpan: {type(exc).__name__}")
+
+
+def pick_queries(settings):
+    """Return (nama_grup, daftar_query, index_grup_berikutnya_atau_None).
+
+    Mode threads_only dengan threads_query_groups -> rotasi grup. Override manual lewat env
+    THREADS_QUERY_GROUP (huruf awal/nama grup, mis. 'B' atau 'B_work'; 'auto' = rotasi).
+    Selain itu dipakai threads_queries (perilaku V2).
+    """
+    limit = int(settings.get("threads_max_queries_per_run", 5))
+    groups = settings.get("threads_query_groups") or {}
+    if settings.get("source_mode") != "threads_only" or not groups:
+        return "flat", list(settings.get("threads_queries", []))[:limit], None
+    names = list(groups)
+    forced = os.getenv("THREADS_QUERY_GROUP", "").strip().lower()
+    if forced and forced != "auto":
+        for name in names:
+            if name.lower() == forced or name.lower().startswith(forced + "_") or name.lower()[:1] == forced[:1] and len(forced) == 1:
+                return name, list(groups[name])[:limit], None
+    idx = int(_load_state().get("query_group_index", 0)) % len(names)
+    name = names[idx]
+    return name, list(groups[name])[:limit], (idx + 1) % len(names)
+
+
 def fetch_threads(settings):
     """Kembalikan list item social. Tidak pernah melempar exception ke pemanggil."""
     token = os.getenv("THREADS_ACCESS_TOKEN", "").strip()
-    queries = list(settings.get("threads_queries", []))[: int(settings.get("threads_max_queries_per_run", 5))]
+    group, queries, next_idx = pick_queries(settings)
     if not token or not queries:
         return []
+    print(f"Threads search: grup '{group}' -> {queries}")
+    aborted = False
 
     own = _own_username(token)
     per_query = int(settings.get("threads_results_per_query", 8))
@@ -71,9 +116,10 @@ def fetch_threads(settings):
             # Error izin/token berlaku untuk semua query; hentikan lebih awal.
             if resp.status_code in (400, 401, 403):
                 print("Periksa: scope threads_keyword_search pada token, dan status izin app di Meta.")
+                aborted = True
                 break
             continue
-        for post in resp.json().get("data", [])[:per_query * 3]:
+        for rank, post in enumerate(resp.json().get("data", [])[:per_query * 3]):
             raw_total += 1
             username = (post.get("username") or "").lower()
             if own and username == own:
@@ -87,6 +133,11 @@ def fetch_threads(settings):
                 "category": "threads_social_signal", "title": f"@{post.get('username', 'unknown')}",
                 "url": post.get("permalink", ""), "published_at": post.get("timestamp", ""),
                 "summary": text, "query": query,
+                # metadata percakapan untuk conversation scoring (V3)
+                "username": username, "rank": rank, "query_group": group,
+                "search_type": settings.get("threads_search_type", "TOP"),
+                "has_replies": bool(post.get("has_replies")),
+                "is_quote_post": bool(post.get("is_quote_post")),
             })
             if sum(1 for i in items if i.get("query") == query) >= per_query:
                 break
@@ -95,4 +146,6 @@ def fetch_threads(settings):
         print("Threads search: semua hasil adalah postingan akun sendiri. Kemungkinan izin "
               "threads_keyword_search belum disetujui Meta (App Review/Advanced Access) atau token belum memuat scope-nya.")
     print(f"Threads search: {len(items)} sinyal dari {len(queries)} query.")
+    if next_idx is not None and not aborted and raw_total:
+        _save_state({**_load_state(), "query_group_index": next_idx, "last_group": group})
     return items
