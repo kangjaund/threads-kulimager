@@ -101,7 +101,7 @@ def reflow(text, rules):
     return SEPARATOR.join(blocks)
 
 
-def check_format(text, rules):
+def check_format(text, rules, root=True):
     """Return daftar alasan penolakan (kosong = format lolos)."""
     reasons = []
     blocks = blocks_of(text)
@@ -117,8 +117,37 @@ def check_format(text, rules):
     if any(len(b) > rules["block_max_chars"] * 1.1 for b in blocks):
         reasons.append("block-too-long")
     first = split_sentences(blocks[0])
-    if first and len(first[0]) > rules["hook_hard_chars"]:
+    if root and first and len(first[0]) > rules["hook_hard_chars"]:
         reasons.append("hook-too-long")
     if "\n" in text.strip() and SEPARATOR not in text.strip():
         reasons.append("no-blank-line")
     return reasons
+
+
+def thread_settings(cfg):
+    """Utas (multi-post). Default di kode; override opsional di config.json -> thread."""
+    t = cfg.get("thread", {}) if cfg else {}
+    return {"enabled": bool(t.get("enabled", True)), "max_parts": max(1, min(int(t.get("max_parts", 4)), 6))}
+
+
+def split_into_parts(text, max_chars, max_parts):
+    """Pecah teks yang kepanjangan menjadi beberapa post pada batas blok. None jika tidak bisa."""
+    blocks = blocks_of(text)
+    if any(len(b) > max_chars for b in blocks):
+        return None
+    parts, cur = [], []
+    for b in blocks:
+        if cur and len(SEPARATOR.join(cur + [b])) > max_chars:
+            parts.append(cur)
+            cur = [b]
+        else:
+            cur.append(b)
+    if cur:
+        parts.append(cur)
+    # Hindari bagian terakhir yang terlalu pendek: pinjam satu blok dari bagian sebelumnya.
+    if len(parts) > 1 and len(SEPARATOR.join(parts[-1])) < 80 and len(parts[-2]) > 1:
+        moved = parts[-2][-1]
+        if len(SEPARATOR.join([moved] + parts[-1])) <= max_chars:
+            parts[-1].insert(0, parts[-2].pop())
+    joined = [SEPARATOR.join(p) for p in parts]
+    return joined if 1 <= len(joined) <= max_parts else None

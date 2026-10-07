@@ -27,11 +27,14 @@ def api_error(resp):
         return f"HTTP {resp.status_code}: {resp.text[:200]}"
 
 
-def publish(text, user_id, token, delay):
+def publish(text, user_id, token, delay, reply_to=None):
+    payload = {"media_type": "TEXT", "text": text, "access_token": token}
+    if reply_to:
+        payload["reply_to_id"] = reply_to  # lanjutan utas: membalas bagian sebelumnya
     create = request_with_retry(
         "POST",
         f"{GRAPH}/{user_id}/threads",
-        data={"media_type": "TEXT", "text": text, "access_token": token},
+        data=payload,
     )
     if not create.ok:
         raise RuntimeError(f"Gagal membuat container: {api_error(create)}")
@@ -63,7 +66,7 @@ def is_eligible(item, now, mode, window_minutes):
     - mode veto: status 'pending', SUDAH terkirim ke Telegram, dan jendela veto sudah lewat.
     Draft yang belum pernah terkirim ke Telegram tidak pernah auto-post (fail-safe)."""
     status = item.get("status")
-    if status == "approved":
+    if status in ("approved", "posting"):  # "posting" = utas yang baru sebagian terbit; lanjutkan
         return True
     if status == "pending" and mode == "veto":
         if item.get("needs_review"):
@@ -90,7 +93,8 @@ def main():
 
     mode, window = approval_settings(cfg)
     now = datetime.now(timezone.utc)
-    queue = sorted((p for p in posts if is_eligible(p, now, mode, window)), key=lambda p: p["id"])
+    queue = sorted((p for p in posts if is_eligible(p, now, mode, window)),
+                   key=lambda p: (0 if p.get("status") == "posting" else 1, p["id"]))
     if not queue:
         waiting = sum(1 for p in posts if p["status"] == "pending" and p.get("telegram_notified_at"))
         unsent = sum(1 for p in posts if p["status"] == "pending" and not p.get("telegram_notified_at"))
@@ -99,22 +103,29 @@ def main():
         return
 
     item = queue[0]
+    rules = strict_rules(cfg)
     # Pengaman terakhir: draft lama yang berupa satu paragraf panjang dirapikan menjadi blok pendek.
-    formatted = reflow(item["text"], strict_rules(cfg))
-    if formatted != item["text"]:
+    parts = [reflow(t, rules) for t in [item["text"], *item.get("thread", [])]]
+    if parts[0] != item["text"] or parts[1:] != list(item.get("thread", [])):
         print("Teks dirapikan menjadi blok pendek sebelum diposting.")
-        item["text"] = formatted
-    text = item["text"]
+        item["text"] = parts[0]
+        if len(parts) > 1:
+            item["thread"] = parts[1:]
+    done_ids = list(item.get("thread_ids", []))
     auto = item["status"] == "pending"
+    label = " [utas %d bagian]" % len(parts) if len(parts) > 1 else ""
     print(f"Postingan #{item['id']} ({item.get('pillar')}/{item.get('format')}/{item.get('style')})"
-          + (" [auto-approve: tidak ada veto]" if auto else " [approved manual]") + ":")
-    print(text)
+          + (" [auto-approve: tidak ada veto]" if auto else " [approved manual]") + label + ":")
+    for n, part in enumerate(parts, 1):
+        if len(parts) > 1:
+            print(f"--- bagian {n}/{len(parts)}{' (sudah terbit)' if n <= len(done_ids) else ''} ---")
+        print(part)
 
-    if len(text) > 500:
+    if any(len(part) > 500 for part in parts):
         item["status"] = "failed"
         item["last_error"] = "Teks melebihi 500 karakter"
         save_posts(posts)
-        sys.exit("ERROR: teks melebihi batas 500 karakter Threads.")
+        sys.exit("ERROR: ada bagian yang melebihi batas 500 karakter Threads.")
 
     if dry_run:
         print("\n[DRY RUN] Tidak benar-benar diposting.")
@@ -124,12 +135,22 @@ def main():
     token = require_env("THREADS_ACCESS_TOKEN")
 
     try:
-        post_id = publish(text, user_id, token, cfg["publish_delay_seconds"])
+        for idx in range(len(done_ids), len(parts)):
+            post_id = publish(parts[idx], user_id, token, cfg["publish_delay_seconds"],
+                              reply_to=done_ids[-1] if done_ids else None)
+            done_ids.append(post_id)
+            item["thread_ids"] = done_ids
+            if idx < len(parts) - 1:
+                item["status"] = "posting"  # tersimpan per bagian agar bisa dilanjutkan bila gagal di tengah
+                save_posts(posts)
+                time.sleep(3)
     except (RuntimeError, KeyError) as exc:
         item["attempts"] = item.get("attempts", 0) + 1
         item["last_error"] = str(exc)
         if item["attempts"] >= MAX_ATTEMPTS:
             item["status"] = "failed"
+            if done_ids:
+                item["last_error"] += f" (utas tidak lengkap: {len(done_ids)}/{len(parts)} bagian sudah terbit)"
         save_posts(posts)
         sys.exit(f"ERROR: {exc} (percobaan {item['attempts']}/{MAX_ATTEMPTS})")
 
@@ -137,10 +158,10 @@ def main():
         item["auto_approved_at"] = now_iso()
     item["status"] = "posted"
     item["posted_at"] = now_iso()
-    item["threads_post_id"] = post_id
+    item["threads_post_id"] = done_ids[0]
     item.pop("last_error", None)
     save_posts(posts)
-    print(f"Berhasil diposting. Threads post id: {post_id}")
+    print(f"Berhasil diposting ({len(parts)} bagian). Threads post id: {done_ids[0]}")
 
 
 if __name__ == "__main__":

@@ -101,10 +101,16 @@ def score_post(post):
 
 def format_draft(post):
     overall, hook, specificity, boldness, aiish = score_post(post)
-    text = post["text"]
+    parts = [post["text"], *post.get("thread", [])]
+    if len(parts) > 1:
+        shown = "\n\n".join(f"<b>({i}/{len(parts)})</b>\n{html.escape(t)}" for i, t in enumerate(parts, 1))
+        title = f"🧵 <b>Draft Utas #{post['id']}</b> ({len(parts)} bagian)"
+    else:
+        shown = html.escape(parts[0])
+        title = f"🤖 <b>Draft Threads #{post['id']}</b>"
     body = (
-        f"🤖 <b>Draft Threads #{post['id']}</b>\n\n"
-        f"{html.escape(text)}\n\n"
+        f"{title}\n\n"
+        f"{shown}\n\n"
         f"────────────\n"
         f"Score: <b>{overall}/100</b>\n"
         f"Hook: {hook}/10  ·  Specificity: {specificity}/10\n"
@@ -184,11 +190,11 @@ def process_action(token, configured_chat_id, posts, action, post_id, message=No
     if not item:
         return False
 
-    if item.get("status") not in ("pending", "approved", "rejected", "posted"):
+    if item.get("status") not in ("pending", "approved", "rejected", "posted", "posting"):
         return False
 
     status = item.get("status")
-    if status == "posted":
+    if status in ("posted", "posting"):
         result_text = f"ℹ️ <b>Draft #{post_id} sudah diposting.</b>"
     elif action == "approve":
         if status == "approved":

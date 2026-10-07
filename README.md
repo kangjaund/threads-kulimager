@@ -97,6 +97,26 @@ pending → rejected
 
 Pada mode veto, workflow posting mengambil draft `approved` atau `pending` yang sudah lewat jendela veto (lihat bagian *Mode veto*). Draft `rejected` tidak akan pernah diposting.
 
+## Utas (multi-post)
+
+Default-nya satu post. Utas dipakai hanya jika diperlukan:
+
+- Model boleh melanjutkan satu ide di `thread_2`..`thread_4` kalau benar-benar butuh lebih dari 450 karakter.
+- Kalau sebuah post kepanjangan, kode otomatis memecahnya menjadi utas pada batas blok (bagian terakhir tidak dibiarkan terlalu pendek).
+- Maksimal 4 bagian; tiap bagian maksimal 450 karakter dan mengikuti aturan blok yang sama. Bagian 1 harus utuh jika dibaca sendiri.
+- Pemeriksaan fakta membaca seluruh utas, dan draft di Telegram ditampilkan per bagian (1/3, 2/3, ...).
+- Saat tayang, bagian 2 membalas bagian 1, bagian 3 membalas bagian 2, dan seterusnya (`reply_to_id`).
+- Kalau gagal di tengah (misalnya bagian 2 error), statusnya menjadi `posting` dan run berikutnya **melanjutkan dari bagian yang belum terbit**, bukan mengulang dari awal. Setelah 3 kali gagal statusnya `failed` dan tercatat berapa bagian yang sudah terbit.
+- Satu utas dihitung 1 post untuk batas `max_posts_per_day`.
+
+Override opsional di `config.json` (tidak wajib):
+
+```json
+"thread": { "enabled": true, "max_parts": 4 }
+```
+
+`"enabled": false` mematikan utas (post yang kepanjangan akan ditolak).
+
 ## Format paragraf (strict)
 
 Aturan di prompt saja sering diabaikan model, hasilnya satu paragraf panjang. Karena itu format **ditegakkan di kode** (`src/textfmt.py`) pada tiga lapis:

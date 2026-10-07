@@ -13,7 +13,8 @@ from difflib import SequenceMatcher
 
 from common import load_config, load_posts, now_iso, request_with_retry, require_env, save_posts
 from research import build_packet, load_research, save_marks, select_batch
-from textfmt import BLOCK_KEYS, assemble_blocks, check_format, reflow, strict_rules
+from textfmt import (BLOCK_KEYS, assemble_blocks, check_format, reflow, split_into_parts, strict_rules,
+                     thread_settings)
 from rss_sources import research_settings
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -32,12 +33,13 @@ BANNED_GENERIC_STARTS = (
     "semoga bermanfaat", "tetap semangat", "lesson:", "myth:", "bandingkan:", "realitanya:", "pertanyaannya:",
 )
 EMOJI_RE = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF\u2B50\u2B06\u2194-\u21AA]")
-_BLOCK_PROPS = {k: {"type": "string"} for k in BLOCK_KEYS}
+THREAD_KEYS = ("thread_2", "thread_3", "thread_4")
+_BLOCK_PROPS = {k: {"type": "string"} for k in (*BLOCK_KEYS, *THREAD_KEYS)}
 POSTS_SCHEMA = {
     "type": "object",
     "properties": {"posts": {"type": "array", "items": {
         "type": "object", "properties": dict(_BLOCK_PROPS),
-        "required": list(BLOCK_KEYS), "additionalProperties": False}}},
+        "required": [*BLOCK_KEYS, *THREAD_KEYS], "additionalProperties": False}}},
     "required": ["posts"], "additionalProperties": False,
 }
 RESEARCH_SCHEMA = {
@@ -46,7 +48,7 @@ RESEARCH_SCHEMA = {
         "type": "object",
         "properties": {"source_id": {"type": "string"}, "skip": {"type": "boolean"},
                        "skip_reason": {"type": "string"}, "pillar": {"type": "string"}, **_BLOCK_PROPS},
-        "required": ["source_id", "skip", "skip_reason", "pillar", *BLOCK_KEYS],
+        "required": ["source_id", "skip", "skip_reason", "pillar", *BLOCK_KEYS, *THREAD_KEYS],
         "additionalProperties": False}}},
     "required": ["posts"], "additionalProperties": False,
 }
@@ -220,6 +222,15 @@ def static_base_lines(cfg):
         "- Contoh bentuk saja (topik tidak relevan): block_1 'Warung kopi jarang kalah karena kopinya.' | "
         "block_2 'Biasanya kalah karena antreannya.' | block_3 'Orang rela bayar lebih untuk waktu yang nggak terbuang.'",
     ]
+    th = thread_settings(cfg)
+    if th["enabled"]:
+        lines += [
+            "", f"UTAS (OPSIONAL, maksimal {th['max_parts']} bagian total):",
+            f"- Default-nya SATU post. Pakai utas hanya jika SATU ide inti benar-benar butuh lebih dari {cfg['max_chars']} karakter.",
+            "- Lanjutan utas ditulis di thread_2, thread_3, thread_4 (kosongkan jika tidak dipakai). Tiap bagian maksimal "
+            f"{cfg['max_chars']} karakter, berisi 1-3 blok pendek yang dipisah baris kosong, tanpa penomoran seperti '1/3'.",
+            "- Bagian 1 (block_1..block_5) harus menarik dan utuh jika dibaca sendiri. Jangan memecah dua ide berbeda menjadi utas.",
+        ]
     lines += ["", "PANDUAN PILAR:", *[f"- {p}: {desc}" for p, desc in cfg["pillars"].items()]]
     return lines
 
@@ -260,8 +271,8 @@ def static_research_prompt(cfg):
               "- [S*] hanya sinyal percakapan komunitas dan tidak boleh dijadikan fakta teknis.",
               "- Pilih 'pillar' dari PANDUAN PILAR yang paling cocok dengan angle post."]
     lines += SELF_EDIT
-    lines += ["", 'Keluarkan HANYA JSON {"posts":[{"source_id","skip","skip_reason","pillar","block_1","block_2","block_3","block_4","block_5"}]} '
-              "dalam urutan yang sama dengan penugasan. Jika skip=true, kosongkan semua block.", "", "=== DATA UNTUK PANGGILAN INI ==="]
+    lines += ["", 'Keluarkan HANYA JSON {"posts":[{"source_id","skip","skip_reason","pillar","block_1","block_2","block_3","block_4","block_5","thread_2","thread_3","thread_4"}]} '
+              "dalam urutan yang sama dengan penugasan. Jika skip=true, kosongkan semua block dan thread.", "", "=== DATA UNTUK PANGGILAN INI ==="]
     return "\n".join(lines)
 
 
@@ -280,7 +291,7 @@ def build_research_prompt(cfg, assignments, packet, recent_texts):
 def build_prompt(cfg, assignments, avoid_texts):
     """Prompt mode evergreen (research dimatikan). Return (prompt, static_chars)."""
     lines = static_base_lines(cfg) + SELF_EDIT
-    lines += ["", 'Keluarkan HANYA JSON {"posts":[{"block_1","block_2","block_3","block_4","block_5"}]} sesuai urutan penugasan.', "", "=== DATA UNTUK PANGGILAN INI ==="]
+    lines += ["", 'Keluarkan HANYA JSON {"posts":[{"block_1","block_2","block_3","block_4","block_5","thread_2","thread_3","thread_4"}]} sesuai urutan penugasan.', "", "=== DATA UNTUK PANGGILAN INI ==="]
     static = "\n".join(lines)
     used_styles = sorted({a["style"] for a in assignments})
     used_formats = sorted({a["format"] for a in assignments})
@@ -304,7 +315,7 @@ def build_verify_prompt(cfg, candidates, mapping, socials_text):
     for i, c in enumerate(candidates, 1):
         src = mapping[c["source_id"]]
         text = (src.get("content") or src.get("summary") or "")[:1100]
-        lines += [f"[P{i}] POST: {c['text']}", f"SUMBER ({src['source']}, {src['title']}): {text}", ""]
+        lines += [f"[P{i}] POST: {c.get('full_text') or c['text']}", f"SUMBER ({src['source']}, {src['title']}): {text}", ""]
     if socials_text:
         lines += ["SINYAL SOSIAL:", socials_text, ""]
     lines.append('Keluarkan HANYA JSON {"results":[{"id":"P1","supported":true,"issue":""}]} untuk semua post. '
@@ -338,7 +349,7 @@ def count_sentences(block):
     return len([s for s in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"“'(])", block.strip()) if s.strip()])
 
 
-def quality_check(text, pool, cfg, source_text=None):
+def quality_check(text, pool, cfg, source_text=None, root=True, min_chars=None):
     """Gate deterministik: tolak slop AI, pelanggaran format, dan salinan sumber."""
     reasons = []
     max_chars = cfg["max_chars"]
@@ -348,7 +359,8 @@ def quality_check(text, pool, cfg, source_text=None):
     lead = low.lstrip("“\"'‘( ")
     starts, contains = banned_matchers(cfg)
 
-    if not (MIN_CHARS <= len(clean) <= max_chars):
+    lo = min_chars if min_chars is not None else (MIN_CHARS if root else 20)
+    if not (lo <= len(clean) <= max_chars):
         reasons.append("length")
     if any(lead.startswith(x) for x in BANNED_GENERIC_STARTS) or any(lead.startswith(x) for x in starts):
         reasons.append("generic-opening")
@@ -377,7 +389,7 @@ def quality_check(text, pool, cfg, source_text=None):
         reasons.append("repeated-transition")
 
     # Format paragraf: ditegakkan lewat textfmt (teks diasumsikan sudah di-reflow)
-    reasons += check_format(text, strict_rules(cfg))
+    reasons += check_format(text, strict_rules(cfg), root=root)
 
     # Jangan menyalin kalimat sumber
     if source_text:
@@ -385,6 +397,32 @@ def quality_check(text, pool, cfg, source_text=None):
         grams = {tuple(src_words[i:i + COPY_NGRAM]) for i in range(len(src_words) - COPY_NGRAM + 1)}
         if any(tuple(post_words[i:i + COPY_NGRAM]) in grams for i in range(len(post_words) - COPY_NGRAM + 1)):
             reasons.append("copies-source")
+    return (not reasons), reasons
+
+
+def build_parts(entry, cfg):
+    """Bangun daftar post (utas) dari output model: bagian 1 dari block_1..5, lanjutan dari thread_2..4.
+    Kalau satu post kepanjangan, otomatis dipecah menjadi utas pada batas blok."""
+    rules, th = strict_rules(cfg), thread_settings(cfg)
+    root = reflow(assemble_blocks(entry), rules)
+    parts = [root]
+    if th["enabled"]:
+        parts += [reflow(str(entry.get(k) or "").strip(), rules) for k in THREAD_KEYS if str(entry.get(k) or "").strip()]
+        if len(parts) == 1 and len(root) > cfg["max_chars"]:
+            split = split_into_parts(root, cfg["max_chars"], th["max_parts"])
+            if split:
+                parts = [reflow(x, rules) for x in split]
+    return parts[: th["max_parts"]]
+
+
+def check_parts(parts, pool, cfg, source_text=None):
+    """Gate untuk semua bagian utas. Return (ok, alasan)."""
+    reasons = []
+    for idx, part in enumerate(parts):
+        # Bagian 1 dari sebuah utas boleh lebih pendek (hook), tetapi tetap harus utuh jika dibaca sendiri.
+        ok, why = quality_check(part, pool if idx == 0 else [], cfg, source_text, root=(idx == 0),
+                                min_chars=60 if (idx == 0 and len(parts) > 1) else None)
+        reasons += [(f"bagian{idx + 1}:" if len(parts) > 1 else "") + r for r in why]
     return (not reasons), reasons
 
 
@@ -405,10 +443,11 @@ def run_evergreen(cfg, recent, avoid_texts, need):
             print(f"Putaran {round_no} gagal: {exc}")
             continue
         for assignment, item in zip(assignments, data.get("posts", [])):
-            text = reflow(assemble_blocks(item), strict_rules(cfg))
-            ok, reasons = quality_check(text, avoid_texts + [a["text"] for a in accepted], cfg)
+            parts = build_parts(item, cfg)
+            text = parts[0]
+            ok, reasons = check_parts(parts, avoid_texts + [a["text"] for a in accepted], cfg)
             if ok and len(accepted) < need:
-                accepted.append({**assignment, "text": text})
+                accepted.append({**assignment, "text": text, "parts": parts})
             else:
                 print(f"Dibuang ({', '.join(reasons)}): {text[:80]!r}")
     return accepted, {}, failures
@@ -474,10 +513,11 @@ def run_research(cfg, recent, avoid_texts, need):
                 local_mark(src["id"], skipped_at=stamp, skip_reason=(entry.get("skip_reason") or "tidak ada angle kuat")[:160])
                 print(f"Skip {src['source']}: {entry.get('skip_reason', '')[:100]}")
                 continue
-            text = reflow(assemble_blocks(entry), strict_rules(cfg))
+            parts = build_parts(entry, cfg)
+            text = parts[0]
             source_text = (src.get("content") or src.get("summary") or "")
-            ok, reasons = quality_check(text, avoid_texts + [a["text"] for a in accepted] + [c["text"] for c in candidates],
-                                        cfg, source_text)
+            ok, reasons = check_parts(parts, avoid_texts + [a["text"] for a in accepted] + [c["text"] for c in candidates],
+                                      cfg, source_text)
             if not ok:
                 tries[src["id"]] += 1
                 print(f"Dibuang ({', '.join(reasons)}): {text[:80]!r}")
@@ -485,7 +525,8 @@ def run_research(cfg, recent, avoid_texts, need):
                     local_mark(src["id"], skipped_at=stamp, skip_reason="gagal quality gate: " + ",".join(reasons))
                 continue
             pillar = entry.get("pillar") if entry.get("pillar") in cfg["pillars"] else next(iter(cfg["pillars"]))
-            candidates.append({"source_id": rid, "text": text, "pillar": pillar, **assign_map[rid]})
+            candidates.append({"source_id": rid, "text": text, "parts": parts,
+                               "full_text": "\n\n[LANJUTAN UTAS]\n\n".join(parts), "pillar": pillar, **assign_map[rid]})
 
         if not candidates:
             continue
@@ -547,6 +588,8 @@ def main():
     for item in accepted:
         post = {"id": next_id, "text": item["text"], "pillar": item["pillar"], "format": item["format"],
                 "style": item["style"], "status": status, "attempts": 0, "created_at": now_iso()}
+        if len(item.get("parts", [])) > 1:
+            post["thread"] = item["parts"][1:]
         if item.get("source"):
             post["source"] = item["source"]
             post["verified"] = bool(item.get("verified"))
