@@ -4,7 +4,6 @@ on:
   schedule:
     # 09:00, 13:00, 17:00, 21:00 WIB. GitHub cron memakai UTC.
     - cron: "0 2,6,10,14 * * *"
-    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:

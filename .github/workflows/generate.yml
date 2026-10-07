@@ -4,7 +4,6 @@ on:
   schedule:
     # 08:00 WIB setiap hari. GitHub cron memakai UTC.
     - cron: "0 1 * * *"
-    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +27,15 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # Kumpulkan sinyal research (RSS/web/Threads). Kalau gagal sebagian, generate tetap jalan
+      # dengan data research yang sudah tersimpan.
+      - name: Research
+        continue-on-error: true
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: python src/research.py
+
       - name: Generate + quality gate
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -48,7 +56,7 @@ jobs:
         run: |
           git config user.name "threads-bot"
           git config user.email "threads-bot@users.noreply.github.com"
-          git add data/posts.json data/telegram_offset.json
+          git add -A data
           if git diff --cached --quiet; then
             echo "Tidak ada perubahan antrean."
             exit 0
