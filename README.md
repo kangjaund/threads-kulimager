@@ -97,6 +97,84 @@ pending → rejected
 
 Pada mode veto, workflow posting mengambil draft `approved` atau `pending` yang sudah lewat jendela veto (lihat bagian *Mode veto*). Draft `rejected` tidak akan pernah diposting.
 
+## Format paragraf (strict)
+
+Aturan di prompt saja sering diabaikan model, hasilnya satu paragraf panjang. Karena itu format **ditegakkan di kode** (`src/textfmt.py`) pada tiga lapis:
+
+1. **Schema**: model tidak menulis satu `text`, tetapi mengisi `block_1` sampai `block_5`. Satu post otomatis terdiri dari beberapa blok yang dipisah baris kosong.
+2. **Reflow otomatis**: kalau model tetap menumpuk semuanya di satu blok, kode memecahnya per kalimat: kalimat pertama menjadi hook sendiri, sisanya maksimal 2 kalimat per blok.
+3. **Gate**: draft yang masih melanggar (misalnya satu kalimat raksasa yang tidak bisa dipecah) ditolak.
+
+Aturan default (lebih ketat dari `config.json`; kalau config lebih ketat, config yang dipakai):
+
+| Aturan | Nilai |
+|---|---|
+| Hook (blok pertama) | 1 kalimat, maksimal 120 karakter (batas keras 160) |
+| Kalimat per blok | maksimal 2 |
+| Karakter per blok | maksimal 200 |
+| Jumlah blok | 2-5 |
+| Post > 140 karakter | minimal 2 blok |
+| Post > 260 karakter | minimal 3 blok |
+| Pemisah antar-blok | baris kosong |
+
+`post.py` juga merapikan draft lama yang masih satu paragraf tepat sebelum diposting, jadi draft yang sudah ada di antrean ikut terjaga.
+
+Override opsional di `config.json` (tidak wajib):
+
+```json
+"formatting": {
+  "strict": {
+    "hook_max_chars": 110,
+    "block_max_chars": 180,
+    "max_sentences_per_block": 2,
+    "min_blocks_over_chars": 120,
+    "three_blocks_over_chars": 240
+  }
+}
+```
+
+## Research Engine (niche AI)
+
+Generator tidak lagi menulis dari nol. Setiap hari `generate.yml` menjalankan:
+
+```
+research.py  -> data/research.json   (RSS/Atom, halaman indeks lab, Google News, Threads, X opsional)
+generate.py  -> Research Packet -> draft -> quality gate -> verifikasi fakta -> data/posts.json
+telegram_approval.py -> kirim draft + sumber ke Telegram -> (alur veto yang sudah ada)
+```
+
+File: `src/research.py` (kumpulkan, pilih, susun packet), `src/rss_sources.py` (daftar sumber + default), `src/threads_research.py` (Threads keyword search).
+
+**Cara kerja singkat**
+
+1. Artikel yang lebih tua dari `research.freshness.max_source_age_days` dibuang. Yang `prefer_recent_days` terakhir didahulukan, lalu diurutkan menurut `research.source_priority`. Judul yang nyaris sama dari beberapa media digabung (dicatat sebagai "juga diberitakan").
+2. Tiap run memilih sebagian artikel segar yang belum pernah dipakai untuk Research Packet (`[R1]..`) plus beberapa sinyal sosial (`[S1]..`). Sinyal sosial hanya bahan observasi, bukan sumber fakta.
+3. Model menulis satu post per sumber atau memilih skip kalau tidak ada angle kuat. Sumber yang di-skip atau sudah dipakai tidak muncul lagi.
+4. **Quality gate** (deterministik): frasa/pembuka terlarang dari `banned_patterns`, aturan `formatting` (jumlah blok, maksimal kalimat per blok, wall of text), tanpa URL, emoji maksimal 1, hashtag maksimal 1, dan menyalin 8 kata beruntun dari sumber ditolak.
+5. **Verifikasi fakta**: panggilan LLM kedua memeriksa klaim faktual tiap draft terhadap teks sumbernya. Klaim yang tidak didukung dibuang. Kalau verifikasi tidak bisa dijalankan (misalnya Groq error), draft tetap masuk antrean tapi bertanda `needs_review`: **tidak akan auto-post** pada mode veto, harus kamu Approve manual.
+6. Pesan Telegram memuat nama sumber, judul, dan link, jadi kamu bisa cek cepat sebelum veto.
+
+**Yang dipakai dari blok `research` di config.json:** `enabled`, `source_priority`, `freshness` (`prefer_recent_days`, `max_source_age_days`), serta teks `transformation`, `quality_checks`, dan `social_signal_rules` yang dimasukkan ke prompt. `research.enabled = false` mengembalikan ke mode evergreen tanpa research.
+
+**Sumber**
+
+- Default ada di `src/rss_sources.py`: lab dan blog resmi (DeepMind, OpenAI, Google, Hugging Face, GitHub, AWS, dll.), media teknologi (TechCrunch, The Verge, Ars Technica, MIT Tech Review, VentureBeat, WIRED), komentar/discovery (Simon Willison, Import AI, Latent Space, Hacker News), halaman indeks Anthropic, Meta AI, dan Mistral (tanpa RSS resmi), plus Google News (hanya judul).
+- Untuk mengganti tanpa mengubah kode, tambahkan di blok `research` pada `config.json`: `rss_feeds`, `html_index`, `google_news_queries`, `threads_queries`, `x_queries`. Kalau ada, isi config menggantikan default.
+- Satu sumber yang gagal tidak menghentikan yang lain; log menampilkan peringatannya.
+- X: tidak ada RSS yang stabil dan gratis. Diskusi X hanya terjangkau lewat X API (`X_BEARER_TOKEN` + `x_queries`), dan itu opsional. Tanpa itu, sinyal komunitas datang dari Threads dan Hacker News.
+
+**Threads keyword search (perlu perhatian)**
+
+- Token harus memuat scope `threads_keyword_search`. Token yang dibuat sebelum permission dinyalakan tidak otomatis memilikinya: generate ulang lewat User Token Generator, lalu update secret `THREADS_ACCESS_TOKEN`.
+- Menurut dokumentasi Meta, jika app belum disetujui untuk `threads_keyword_search`, pencarian hanya mencakup postingan milik akun yang terautentikasi. Kode ini mengenali kondisi itu dan menulis peringatan di log ("semua hasil adalah postingan akun sendiri"). Postingan sendiri tidak dipakai sebagai sinyal.
+- Dibatasi 5 query per run supaya jauh di bawah kuota pencarian.
+
+**Batas Groq free tier**
+
+`openai/gpt-oss-120b` di free plan dibatasi sekitar 8.000 token per menit (input + output). Karena itu: ukuran prompt dihitung dulu dan jumlah sumber per panggilan dikurangi otomatis kalau terlalu besar, panggilan diberi jeda otomatis, dan bagian prompt yang tetap diletakkan di depan supaya bisa di-cache Groq (token ter-cache tidak dihitung ke batas). Run generate bisa memakan beberapa menit; itu normal. Angka batas bisa berbeda per akun; cek di halaman limits Groq.
+
+**Secret tambahan:** `X_BEARER_TOKEN` (opsional). Secret lain tidak berubah.
+
 ## Mode veto (default)
 
 Tiap slot posting memilih draft berikutnya (id terkecil lebih dulu) yang memenuhi salah satu syarat:

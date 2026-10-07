@@ -112,8 +112,16 @@ def format_draft(post):
         f"Pillar: {post.get('pillar', '-')}\n"
         f"Format: {post.get('format', '-')}"
     )
+    src = post.get("source")
+    if src:
+        title = html.escape((src.get("title") or "")[:110])
+        body += f"\n\n📰 Sumber: {html.escape(src.get('name', '-'))} — {title}\n{html.escape(src.get('url', ''))}"
+        if post.get("needs_review"):
+            body += "\n⚠️ Verifikasi fakta otomatis tidak berjalan. Draft ini TIDAK akan auto-post; tekan Approve hanya setelah kamu cek sumbernya."
+        elif post.get("verified"):
+            body += "\n✔️ Klaim faktual sudah dicek terhadap sumber."
     mode, window = approval_settings(load_config())
-    if mode == "veto":
+    if mode == "veto" and not post.get("needs_review"):
         body += (
             f"\n\n⏱ Diposting otomatis di slot berikutnya (minimal {window} menit setelah pesan ini) "
             f"kecuali kamu tekan Reject."

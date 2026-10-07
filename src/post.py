@@ -4,6 +4,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 
+from textfmt import reflow, strict_rules
 from common import (
     approval_settings,
     load_config,
@@ -65,6 +66,8 @@ def is_eligible(item, now, mode, window_minutes):
     if status == "approved":
         return True
     if status == "pending" and mode == "veto":
+        if item.get("needs_review"):
+            return False  # verifikasi fakta otomatis gagal: wajib Approve manual
         notified = parse_iso(item.get("telegram_notified_at"))
         if notified is None:
             return False
@@ -96,6 +99,11 @@ def main():
         return
 
     item = queue[0]
+    # Pengaman terakhir: draft lama yang berupa satu paragraf panjang dirapikan menjadi blok pendek.
+    formatted = reflow(item["text"], strict_rules(cfg))
+    if formatted != item["text"]:
+        print("Teks dirapikan menjadi blok pendek sebelum diposting.")
+        item["text"] = formatted
     text = item["text"]
     auto = item["status"] == "pending"
     print(f"Postingan #{item['id']} ({item.get('pillar')}/{item.get('format')}/{item.get('style')})"

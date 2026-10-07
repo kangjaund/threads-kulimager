@@ -46,10 +46,12 @@ def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
     """
     import requests
 
+    kwargs.setdefault("timeout", 60)
     last = "unknown"
     for attempt in range(1, retries + 1):
+        resp = None
         try:
-            resp = requests.request(method, url, timeout=60, **kwargs)
+            resp = requests.request(method, url, **kwargs)
             if resp.status_code == 429 or resp.status_code >= 500:
                 last = f"HTTP {resp.status_code}"
             else:
@@ -59,7 +61,7 @@ def request_with_retry(method, url, *, retries=3, backoff=5, **kwargs):
         if attempt < retries:
             retry_after = None
             try:
-                retry_after = float(resp.headers.get("Retry-After", "")) if "resp" in locals() else None
+                retry_after = float(resp.headers.get("Retry-After", "")) if resp is not None else None
             except (ValueError, TypeError):
                 retry_after = None
             time.sleep(max(backoff * attempt, retry_after or 0))
