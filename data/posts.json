@@ -61,5 +61,125 @@
     "verified": true,
     "telegram_message_id": 43,
     "telegram_notified_at": "2026-10-07T04:10:17+00:00"
+  },
+  {
+    "id": 4,
+    "text": "Gemini 4 Argon udah bisa ngurus alur kerja panjang yang dulu cuma impian di tim riset.\n\nBandingkan dengan model sebelumnya, Argon ngasih performa tingkat frontier di software engineering, legal, finance, bahkan pertahanan siber.\n\nTapi kekuatan itu datang dengan \"phased rollout\": hanya tim terpilih yang dapat akses dulu, jadi kebanyakan developer masih menunggu.",
+    "pillar": "ai_radar",
+    "format": "comparison",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "575695fb9451a15b",
+      "name": "Google DeepMind",
+      "title": "Gemini 4 Argon: our next era of frontier intelligence",
+      "url": "https://deepmind.google/blog/gemini-4-argon-our-next-era-of-frontier-intelligence/",
+      "published_at": "2026-09-30T20:01:45+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 44,
+    "telegram_notified_at": "2026-10-07T09:49:19+00:00"
+  },
+  {
+    "id": 5,
+    "text": "Bayangkan jaringan listrik kamu dapat peringatan badai matahari 45 menit sebelum kerusakan.\n\nMicrosoft Research menggabungkan data angin surya, indeks AE & Dst, plus latitud, geologi, dan konduktivitas tanah untuk memprediksi risiko pada 66.935 gardu di AS.\n\nDalam pengujian, sistem berhasil mendeteksi hampir 80% peristiwa besar, memberi operator grid waktu 30‑60 menit untuk langkah pencegahan.",
+    "pillar": "ai_radar",
+    "format": "myth_vs_reality",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "f667d1e017163dde",
+      "name": "Microsoft Research",
+      "title": "Forecasting space weather risks on power grids",
+      "url": "https://www.microsoft.com/en-us/research/blog/forecasting-space-weather-risks-on-power-grids/",
+      "published_at": "2026-09-30T16:00:00+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 45,
+    "telegram_notified_at": "2026-10-07T09:49:21+00:00"
+  },
+  {
+    "id": 6,
+    "text": "Bayangkan asisten AI yang ingat semua detail taman kamu selama bulan terakhir.\n\nAsisten stateless biasanya melupakan konteks—Anda harus menjelaskan kembali tiap kali. AgentCore menambahkan memori terstruktur, jadi percakapan jadi berkesinambungan.\n\nUntuk freelancer, ini artinya tidak lagi harus menuliskan brief klien berulang‑ulang; asisten menyimpan riwayat proyek dan mengurangi waktu onboarding.",
+    "pillar": "ai_radar",
+    "format": "mini_story",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "0530671237898ef0",
+      "name": "AWS Machine Learning",
+      "title": "Building a context-aware AI assistant on AgentCore and OpenClaw",
+      "url": "https://aws.amazon.com/blogs/machine-learning/building-a-context-aware-ai-assistant-on-agentcore-and-openclaw/",
+      "published_at": "2026-10-06T19:19:15+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 46,
+    "telegram_notified_at": "2026-10-07T09:49:23+00:00"
+  },
+  {
+    "id": 7,
+    "text": "ISO/IEC 42005:2025 jadi standar baru untuk tata kelola AI—tapi apa artinya buat freelancer?\n\nAWS soroti peran ‘facilitator’ sebagai penghubung antara kemampuan AI dan penerapan praktis; mereka sering terlewat dalam kebijakan nasional.\n\nBagaimana seorang freelancer bisa mengintegrasikan assessment dampak AI ke workflow harian tanpa tim legal atau auditor besar?",
+    "pillar": "ai_business",
+    "format": "help_seeking",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "5a3a7b4f0cc2570f",
+      "name": "AWS Machine Learning",
+      "title": "Responsible AI governance: How AWS positions customers to align with ISO/IEC 42005:2025",
+      "url": "https://aws.amazon.com/blogs/machine-learning/responsible-ai-governance-how-aws-positions-customers-to-align-with-iso-iec-420052025/",
+      "published_at": "2026-10-06T15:53:28+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 47,
+    "telegram_notified_at": "2026-10-07T09:49:25+00:00"
+  },
+  {
+    "id": 8,
+    "text": "Saat AI menjadi agen ekonomi, freelancer bisa jadi ‘pialang’ agen untuk klien.\n\nCloudflare meluncurkan model ekonomi baru untuk Internet agentic; rekomendasi berbasis agen kini menggerakkan keputusan konsumen secara otomatis.\n\nStrategi apa yang paling efektif untuk membangun layanan agen pribadi dengan modal minim—pakai platform open‑source, atau mengandalkan solusi cloud berbayar?",
+    "pillar": "freelancer_impact",
+    "format": "help_seeking",
+    "style": "storytelling",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "9fb1b6b5f012fc0f",
+      "name": "Cloudflare (AI)",
+      "title": "Everything we launched during Birthday Week 2026",
+      "url": "https://blog.cloudflare.com/birthday-week-2026-wrap-up/",
+      "published_at": "2026-10-05T13:00:00+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 48,
+    "telegram_notified_at": "2026-10-07T09:49:26+00:00"
+  },
+  {
+    "id": 9,
+    "text": "Banyak tim ML pakai SageMaker HyperPod, tapi soal siapa boleh pakai masih jadi teka‑teki.\n\nAWS menyoroti empat lapisan kontrol: organisasi, proyek, klaster, dan beban kerja. Setiap lapisan harus mengatur identitas, kapasitas, dan pemantauan.\n\nBagi freelancer atau startup yang berbagi klaster, aturan kuota yang jelas jadi kunci supaya pekerjaan satu tim nggak mengganggu yang lain.",
+    "pillar": "ai_tools_workflow",
+    "format": "discussion",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T09:49:13+00:00",
+    "source": {
+      "id": "2290e69f397ec1fd",
+      "name": "AWS Machine Learning",
+      "title": "Best practices for Amazon SageMaker HyperPod administration and governance",
+      "url": "https://aws.amazon.com/blogs/machine-learning/best-practices-for-amazon-sagemaker-hyperpod-administration-and-governance/",
+      "published_at": "2026-10-06T15:50:23+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 49,
+    "telegram_notified_at": "2026-10-07T09:49:28+00:00"
   }
 ]
