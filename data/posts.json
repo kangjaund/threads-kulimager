@@ -1,1 +1,62 @@
-[]
+[
+  {
+    "id": 1,
+    "text": "AI masih sering gagal di luar benchmark, bukan karena modelnya bodoh, tapi karena kita menguji di tempat yang salah.\n\nMenurut riset Microsoft, performa AI terukur bagus di tes standar, tapi ketika dipakai dalam konteks nyata hasilnya bisa melenceng drastis.\n\nArtinya, freelancer yang mengandalkan AI harus selalu validasi output sendiri, bukan sekadar percaya angka akurasi yang dipajang.",
+    "pillar": "ai_radar",
+    "format": "strong_opinion",
+    "style": "hot_take",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T04:10:07+00:00",
+    "source": {
+      "id": "8677e8a160074a3e",
+      "name": "Microsoft Research",
+      "title": "What AI gets wrong and what failure teaches us",
+      "url": "https://www.microsoft.com/en-us/research/podcast/what-ai-gets-wrong-and-what-failure-teaches-us/",
+      "published_at": "2026-10-06T16:19:06+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 41,
+    "telegram_notified_at": "2026-10-07T04:10:13+00:00"
+  },
+  {
+    "id": 2,
+    "text": "Model bahasa yang bisa ‘ngobrol’ dalam dialek Emirati baru saja muncul.\n\nSebagian besar LLM Arab hanya paham Modern Standard Arabic, jadi mereka terjemah tiap kata tapi kehilangan makna budaya lokal.\n\nBagi freelancer atau creator di UAE, AI yang paham Emirati berarti terjemahan dan konten yang lebih nyambung, sekaligus menuntut pemahaman budaya yang spesifik.",
+    "pillar": "ai_radar",
+    "format": "so_what",
+    "style": "edukatif_tajam",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T04:10:07+00:00",
+    "source": {
+      "id": "2fd6cf565e27d66d",
+      "name": "Hugging Face",
+      "title": "Falcon-Emirati: When an LLM Learns the Dialect, the Culture, and the Nuance",
+      "url": "https://huggingface.co/blog/tiiuae/falcon-emirati",
+      "published_at": "2026-10-06T06:44:39+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 42,
+    "telegram_notified_at": "2026-10-07T04:10:15+00:00"
+  },
+  {
+    "id": 3,
+    "text": "Semakin pintar agen AI, makin banyak yang lupa mereka tetap 'tamu' di data kamu.\n\nLLM kini bisa menyusun rencana dan memanggil alat eksternal, jadi mereka bisa selesaikan tugas multi‑langkah tanpa campur tangan manusia.\n\nTapi kalau tidak dibekali norma perilaku kontekstual, agen bisa masuk ke ruang pribadi dan bocorin info tanpa disadari—kepercayaan jadi rapuh.",
+    "pillar": "ai_radar",
+    "format": "unexpected_implication",
+    "style": "observasi",
+    "status": "pending",
+    "attempts": 0,
+    "created_at": "2026-10-07T04:10:07+00:00",
+    "source": {
+      "id": "b659df9e958af2a2",
+      "name": "Google Research",
+      "title": "Open and Emergent Problems in Agentic Privacy and Security: A Contextual Angle",
+      "url": "https://research.google/blog/open-and-emergent-problems-in-agentic-privacy-and-security-a-contextual-angle/",
+      "published_at": "2026-10-05T21:08:00+00:00"
+    },
+    "verified": true,
+    "telegram_message_id": 43,
+    "telegram_notified_at": "2026-10-07T04:10:17+00:00"
+  }
+]
