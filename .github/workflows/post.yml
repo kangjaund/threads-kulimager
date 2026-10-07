@@ -1,0 +1,70 @@
+name: Posting ke Threads
+
+on:
+  schedule:
+    # 09:00, 13:00, 17:00, 21:00 WIB. GitHub cron memakai UTC.
+    - cron: "0 2,6,10,14 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (tampilkan saja, jangan posting)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: posts-queue
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Proses tombol Approve/Reject yang kamu tekan di Telegram sejak run terakhir.
+      # continue-on-error: kalau Telegram bermasalah, draft yang sudah approved tetap diposting.
+      - name: Proses approval Telegram
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python src/telegram_approval.py
+
+      - name: Posting
+        env:
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+        run: python src/post.py
+
+      - name: Commit status antrean
+        if: always()
+        run: |
+          git config user.name "threads-bot"
+          git config user.email "threads-bot@users.noreply.github.com"
+          git add data/posts.json data/telegram_offset.json
+          if git diff --cached --quiet; then
+            echo "Tidak ada perubahan antrean."
+            exit 0
+          fi
+          git commit -m "chore: update status posting"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash && git push; then
+              exit 0
+            fi
+            echo "Push gagal (percobaan $i/5), mencoba lagi..."
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 3))
+          done
+          echo "Push gagal setelah 5 percobaan."
+          exit 1
